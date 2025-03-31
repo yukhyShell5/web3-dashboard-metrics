@@ -1,515 +1,422 @@
+
 import React, { useState } from 'react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { PlusIcon, TrashIcon, InfoIcon, AlertTriangleIcon, ShieldIcon, ShieldAlertIcon, AlertCircleIcon } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { MoreHorizontalIcon, SearchIcon, PlusIcon, EyeIcon, PencilIcon, TrashIcon, AlertTriangleIcon, FilterIcon, ArrowDown10Icon, ZapIcon } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-type RuleSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
-
-interface Rule {
-  id: string;
-  name: string;
-  description: string;
-  enabled: boolean;
-  severity: RuleSeverity;
-  type: string;
-  conditions: Condition[];
-}
-
-interface Condition {
-  id: string;
-  field: string;
-  operator: string;
-  value: string;
-}
-
-const sampleRules: Rule[] = [
+// Mock data for rules
+const mockRules = [
   {
     id: '1',
-    name: 'Large ETH Transfer',
-    description: 'Detect large ETH transfers (over 100 ETH)',
-    enabled: true,
+    name: 'Large Transaction Alert',
+    description: 'Alerts when transactions exceed 50 ETH',
+    condition: 'transaction.value > 50 ETH',
     severity: 'high',
-    type: 'transaction',
-    conditions: [
-      { id: 'c1', field: 'value', operator: '&gt;', value: '100' },
-      { id: 'c2', field: 'currency', operator: '==', value: 'ETH' }
-    ]
+    enabled: true,
+    createdAt: '2023-07-15T10:30:00Z',
+    category: 'transaction',
+    chain: 'ethereum'
   },
   {
     id: '2',
-    name: 'Contract Creation',
-    description: 'Alert when new contracts are deployed',
+    name: 'Suspicious Contract Interaction',
+    description: 'Alerts when monitored addresses interact with flagged contracts',
+    condition: 'contract.address IN blacklistedContracts',
+    severity: 'critical',
     enabled: true,
-    severity: 'medium',
-    type: 'transaction',
-    conditions: [
-      { id: 'c3', field: 'to', operator: '==', value: '0x0' },
-      { id: 'c4', field: 'input', operator: '!=', value: '' }
-    ]
+    createdAt: '2023-07-20T11:45:00Z',
+    category: 'smart-contract',
+    chain: 'all'
   },
   {
     id: '3',
-    name: 'Multiple Failed Transactions',
-    description: 'Detect when an address has multiple failed transactions in a short time',
+    name: 'Unusual Gas Price',
+    description: 'Detects transactions with unusually high gas prices',
+    condition: 'transaction.gasPrice > 3 * averageGasPrice',
+    severity: 'medium',
     enabled: false,
-    severity: 'low',
-    type: 'behavioral',
-    conditions: [
-      { id: 'c5', field: 'status', operator: '==', value: 'failed' },
-      { id: 'c6', field: 'count', operator: '&gt;', value: '3' },
-      { id: 'c7', field: 'timeframe', operator: '&lt;', value: '10m' }
-    ]
+    createdAt: '2023-07-25T15:20:00Z',
+    category: 'gas',
+    chain: 'ethereum'
   },
   {
     id: '4',
-    name: 'Interaction with Sanctioned Address',
-    description: 'Alert when transactions involve addresses on sanctions list',
+    name: 'Multiple Failed Transactions',
+    description: 'Alerts when an address has multiple failed transactions in a short period',
+    condition: 'count(failedTransactions) > 5 within 1 hour',
+    severity: 'low',
     enabled: true,
-    severity: 'critical',
-    type: 'compliance',
-    conditions: [
-      { id: 'c8', field: 'to|from', operator: 'in', value: 'SANCTIONS_LIST' }
-    ]
+    createdAt: '2023-08-01T09:10:00Z',
+    category: 'transaction',
+    chain: 'all'
   },
   {
     id: '5',
-    name: 'New NFT Mint',
-    description: 'Information alert when NFTs are minted',
-    enabled: true,
+    name: 'New Address Interaction',
+    description: 'Detects when monitored addresses interact with new addresses',
+    condition: 'receiver NOT IN knownAddresses',
     severity: 'info',
-    type: 'nft',
-    conditions: [
-      { id: 'c9', field: 'event', operator: '==', value: 'NFTMint' }
-    ]
-  }
-];
-
-const severityConfig = {
-  critical: {
-    icon: AlertCircleIcon,
-    color: 'text-red-500',
-    bgColor: 'bg-red-500/10',
-    borderColor: 'border-red-500/20',
+    enabled: true,
+    createdAt: '2023-08-05T14:30:00Z',
+    category: 'address',
+    chain: 'all'
   },
-  high: {
-    icon: ShieldAlertIcon,
-    color: 'text-orange-500',
-    bgColor: 'bg-orange-500/10',
-    borderColor: 'border-orange-500/20',
-  },
-  medium: {
-    icon: AlertTriangleIcon,
-    color: 'text-yellow-500',
-    bgColor: 'bg-yellow-500/10',
-    borderColor: 'border-yellow-500/20',
-  },
-  low: {
-    icon: ShieldIcon,
-    color: 'text-blue-500',
-    bgColor: 'bg-blue-500/10',
-    borderColor: 'border-blue-500/20',
-  },
-  info: {
-    icon: InfoIcon,
-    color: 'text-green-500',
-    bgColor: 'bg-green-500/10',
-    borderColor: 'border-green-500/20',
-  },
-};
-
-const fieldOptions = [
-  { value: 'value', label: 'Value (ETH/Token Amount)' },
-  { value: 'to', label: 'Recipient Address' },
-  { value: 'from', label: 'Sender Address' },
-  { value: 'gas', label: 'Gas Used' },
-  { value: 'gasPrice', label: 'Gas Price' },
-  { value: 'input', label: 'Input Data' },
-  { value: 'blockNumber', label: 'Block Number' },
-  { value: 'timestamp', label: 'Timestamp' },
-  { value: 'status', label: 'Transaction Status' },
-  { value: 'currency', label: 'Currency Type' },
-  { value: 'count', label: 'Count' },
-  { value: 'timeframe', label: 'Timeframe' },
-  { value: 'event', label: 'Event Type' },
-];
-
-const operatorOptions = [
-  { value: '==', label: 'Equals (==)' },
-  { value: '!=', label: 'Not Equals (!=)' },
-  { value: '>', label: 'Greater Than (>)' },
-  { value: '<', label: 'Less Than (<)' },
-  { value: '>=', label: 'Greater Than or Equal To (>=)' },
-  { value: '<=', label: 'Less Than or Equal To (<=)' },
-  { value: 'in', label: 'In (List)' },
-  { value: 'contains', label: 'Contains' },
-  { value: 'startsWith', label: 'Starts With' },
-  { value: 'endsWith', label: 'Ends With' },
 ];
 
 const Rules = () => {
-  const [rules, setRules] = useState<Rule[]>(sampleRules);
-  const [activeTab, setActiveTab] = useState('all');
-  const [newRule, setNewRule] = useState<Rule>({
-    id: '',
-    name: '',
-    description: '',
-    enabled: true,
-    severity: 'medium',
-    type: 'transaction',
-    conditions: [{ id: crypto.randomUUID(), field: '', operator: '', value: '' }]
-  });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [rules, setRules] = useState(mockRules);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedChain, setSelectedChain] = useState('all');
 
-  const filteredRules = activeTab === 'all' 
-    ? rules 
-    : rules.filter(rule => rule.type === activeTab);
-
-  const handleAddCondition = () => {
-    setNewRule({
-      ...newRule,
-      conditions: [...newRule.conditions, { id: crypto.randomUUID(), field: '', operator: '', value: '' }]
-    });
-  };
-
-  const handleRemoveCondition = (id: string) => {
-    setNewRule({
-      ...newRule,
-      conditions: newRule.conditions.filter(condition => condition.id !== id)
-    });
-  };
-
-  const handleConditionChange = (id: string, field: keyof Condition, value: string) => {
-    setNewRule({
-      ...newRule,
-      conditions: newRule.conditions.map(condition => 
-        condition.id === id ? { ...condition, [field]: value } : condition
-      )
-    });
-  };
-
-  const handleCreateRule = () => {
-    const createdRule = {
-      ...newRule,
-      id: crypto.randomUUID()
-    };
-    setRules([...rules, createdRule]);
-    // Reset form
-    setNewRule({
-      id: '',
-      name: '',
-      description: '',
-      enabled: true,
-      severity: 'medium',
-      type: 'transaction',
-      conditions: [{ id: crypto.randomUUID(), field: '', operator: '', value: '' }]
-    });
-  };
-
-  const handleToggleRule = (id: string) => {
+  const handleToggleRule = (ruleId: string) => {
     setRules(rules.map(rule => 
-      rule.id === id ? { ...rule, enabled: !rule.enabled } : rule
+      rule.id === ruleId ? { ...rule, enabled: !rule.enabled } : rule
     ));
   };
 
-  const handleDeleteRule = (id: string) => {
-    setRules(rules.filter(rule => rule.id !== id));
+  const filteredRules = rules.filter(rule => {
+    const matchesSearch = rule.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         rule.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || rule.category === selectedCategory;
+    const matchesChain = selectedChain === 'all' || rule.chain === selectedChain || rule.chain === 'all';
+    
+    return matchesSearch && matchesCategory && matchesChain;
+  });
+
+  const getSeverityColor = (severity: string) => {
+    switch (severity) {
+      case 'critical': return 'bg-red-500/20 text-red-500';
+      case 'high': return 'bg-orange-500/20 text-orange-500';
+      case 'medium': return 'bg-yellow-500/20 text-yellow-500';
+      case 'low': return 'bg-blue-500/20 text-blue-500';
+      case 'info': return 'bg-green-500/20 text-green-500';
+      default: return 'bg-gray-500/20 text-gray-500';
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Alert Rules</h1>
-        <p className="text-muted-foreground">
-          Create and manage rules to detect suspicious blockchain activities
-        </p>
+    <div className="space-y-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Alert Rules</h1>
+          <p className="text-muted-foreground">Create and manage detection rules</p>
+        </div>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="flex items-center gap-2">
+              <PlusIcon className="h-4 w-4" />
+              Create Rule
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>Create New Alert Rule</DialogTitle>
+              <DialogDescription>
+                Define conditions that will trigger alerts when matched.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="rule-name" className="text-right">
+                  Rule Name
+                </Label>
+                <Input id="rule-name" placeholder="Enter rule name" className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="description" className="text-right">
+                  Description
+                </Label>
+                <Input id="description" placeholder="Rule description" className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="category" className="text-right">
+                  Category
+                </Label>
+                <Select defaultValue="transaction">
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="transaction">Transaction</SelectItem>
+                    <SelectItem value="smart-contract">Smart Contract</SelectItem>
+                    <SelectItem value="gas">Gas</SelectItem>
+                    <SelectItem value="address">Address</SelectItem>
+                    <SelectItem value="custom">Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="severity" className="text-right">
+                  Severity
+                </Label>
+                <Select defaultValue="medium">
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select severity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="critical">Critical</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="info">Info</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="chain" className="text-right">
+                  Blockchain
+                </Label>
+                <Select defaultValue="all">
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select blockchain" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Chains</SelectItem>
+                    <SelectItem value="ethereum">Ethereum</SelectItem>
+                    <SelectItem value="polygon">Polygon</SelectItem>
+                    <SelectItem value="arbitrum">Arbitrum</SelectItem>
+                    <SelectItem value="optimism">Optimism</SelectItem>
+                    <SelectItem value="base">Base</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="condition" className="text-right">
+                  Condition
+                </Label>
+                <div className="col-span-3">
+                  <textarea
+                    id="condition"
+                    placeholder="Enter alert condition"
+                    className="flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">Example: transaction.value > 50 ETH</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <div className="col-span-4 flex items-center justify-end space-x-2">
+                  <Checkbox id="enable" defaultChecked />
+                  <Label htmlFor="enable">Enable rule immediately</Label>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit">Create Rule</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-6">
-          <TabsTrigger value="all">All Rules</TabsTrigger>
-          <TabsTrigger value="transaction">Transaction</TabsTrigger>
-          <TabsTrigger value="behavioral">Behavioral</TabsTrigger>
-          <TabsTrigger value="compliance">Compliance</TabsTrigger>
-          <TabsTrigger value="nft">NFT</TabsTrigger>
-        </TabsList>
+      <Tabs defaultValue="all" className="w-full">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 mb-4">
+          <TabsList>
+            <TabsTrigger value="all">All Rules</TabsTrigger>
+            <TabsTrigger value="enabled">Enabled</TabsTrigger>
+            <TabsTrigger value="disabled">Disabled</TabsTrigger>
+            <TabsTrigger value="templates">Templates</TabsTrigger>
+          </TabsList>
+          
+          <div className="flex space-x-2">
+            <div className="relative">
+              <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search rules..." 
+                className="pl-8 w-60"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Button variant="outline" size="icon">
+              <FilterIcon className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
 
-        <TabsContent value="all" className="space-y-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="mb-4 flex justify-between items-center">
-                <h2 className="text-xl font-semibold">Alert Rules</h2>
-                <Button>
-                  <PlusIcon className="mr-2 h-4 w-4" />
-                  Create Rule
-                </Button>
-              </div>
+        <TabsContent value="all" className="space-y-4">
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                <SelectItem value="transaction">Transaction</SelectItem>
+                <SelectItem value="smart-contract">Smart Contract</SelectItem>
+                <SelectItem value="gas">Gas</SelectItem>
+                <SelectItem value="address">Address</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select value={selectedChain} onValueChange={setSelectedChain}>
+              <SelectTrigger className="w-36">
+                <SelectValue placeholder="Blockchain" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Chains</SelectItem>
+                <SelectItem value="ethereum">Ethereum</SelectItem>
+                <SelectItem value="polygon">Polygon</SelectItem>
+                <SelectItem value="arbitrum">Arbitrum</SelectItem>
+                <SelectItem value="optimism">Optimism</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[50px]">Status</TableHead>
-                    <TableHead className="w-[180px]">Rule</TableHead>
-                    <TableHead className="w-[350px]">Description</TableHead>
-                    <TableHead className="w-[100px]">Severity</TableHead>
-                    <TableHead className="w-[100px]">Type</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredRules.map((rule) => {
-                    const SeverityIcon = severityConfig[rule.severity].icon;
-                    return (
-                      <TableRow key={rule.id}>
-                        <TableCell>
-                          <Switch
-                            checked={rule.enabled}
-                            onCheckedChange={() => handleToggleRule(rule.id)}
-                          />
-                        </TableCell>
-                        <TableCell className="font-medium">{rule.name}</TableCell>
-                        <TableCell>{rule.description}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className={`p-1 rounded ${severityConfig[rule.severity].bgColor}`}>
-                              <SeverityIcon className={`h-4 w-4 ${severityConfig[rule.severity].color}`} />
-                            </div>
-                            <span className={severityConfig[rule.severity].color}>
-                              {rule.severity.charAt(0).toUpperCase() + rule.severity.slice(1)}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="secondary">
-                            {rule.type.charAt(0).toUpperCase() + rule.type.slice(1)}
+          <div className="space-y-4">
+            {filteredRules.length > 0 ? (
+              filteredRules.map((rule) => (
+                <Card key={rule.id} className="relative">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          {rule.name}
+                          <Badge className={getSeverityColor(rule.severity)}>
+                            {rule.severity}
                           </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDeleteRule(rule.id)}
-                          >
-                            <TrashIcon className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="transaction" className="space-y-6">
-          <Card>
-            <CardContent className="pt-6">
-              <h2 className="text-xl font-semibold mb-6">Create Transaction Rule</h2>
-              
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Rule Name</Label>
-                    <Input
-                      id="name"
-                      placeholder="e.g. Large ETH Transfer"
-                      value={newRule.name}
-                      onChange={(e) => setNewRule({ ...newRule, name: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="type">Rule Type</Label>
-                    <Select
-                      value={newRule.type}
-                      onValueChange={(value) => setNewRule({ ...newRule, type: value })}
-                    >
-                      <SelectTrigger id="type">
-                        <SelectValue placeholder="Select rule type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectItem value="transaction">Transaction</SelectItem>
-                          <SelectItem value="behavioral">Behavioral</SelectItem>
-                          <SelectItem value="compliance">Compliance</SelectItem>
-                          <SelectItem value="nft">NFT</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Input
-                    id="description"
-                    placeholder="Describe what this rule detects"
-                    value={newRule.description}
-                    onChange={(e) => setNewRule({ ...newRule, description: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="severity">Severity</Label>
-                  <Select
-                    value={newRule.severity}
-                    onValueChange={(value: RuleSeverity) => setNewRule({ ...newRule, severity: value })}
-                  >
-                    <SelectTrigger id="severity">
-                      <SelectValue placeholder="Select severity" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectItem value="critical">Critical</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="info">Info</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <Separator />
-
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Conditions</h3>
-                  <div className="space-y-4">
-                    {newRule.conditions.map((condition, index) => (
-                      <div key={condition.id} className="grid grid-cols-[1fr,1fr,1fr,auto] gap-4 items-end">
-                        <div className="space-y-2">
-                          <Label>Field</Label>
-                          <Select
-                            value={condition.field}
-                            onValueChange={(value) => handleConditionChange(condition.id, 'field', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select field" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectGroup>
-                                {fieldOptions.map((option) => (
-                                  <SelectItem key={option.value} value={option.value}>
-                                    {option.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Operator</Label>
-                          <Select
-                            value={condition.operator}
-                            onValueChange={(value) => handleConditionChange(condition.id, 'operator', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select operator" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectGroup>
-                                {operatorOptions.map((option) => (
-                                  <SelectItem key={option.value} value={option.value}>
-                                    {option.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectGroup>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Value</Label>
-                          <Input 
-                            placeholder="Enter value"
-                            value={condition.value}
-                            onChange={(e) => handleConditionChange(condition.id, 'value', e.target.value)}
-                          />
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleRemoveCondition(condition.id)}
-                          disabled={newRule.conditions.length === 1}
-                        >
-                          <TrashIcon className="h-4 w-4" />
-                        </Button>
+                          {!rule.enabled && (
+                            <Badge variant="outline" className="text-muted-foreground">
+                              Disabled
+                            </Badge>
+                          )}
+                        </CardTitle>
+                        <CardDescription>{rule.description}</CardDescription>
                       </div>
-                    ))}
-                  </div>
-                  <Button 
-                    variant="outline"
-                    className="mt-4"
-                    onClick={handleAddCondition}
-                  >
-                    <PlusIcon className="mr-2 h-4 w-4" />
-                    Add Condition
-                  </Button>
-                </div>
-
-                <div className="flex justify-end gap-4 mt-6">
-                  <Button variant="outline">Cancel</Button>
-                  <Button onClick={handleCreateRule}>Create Rule</Button>
-                </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontalIcon className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem>
+                            <EyeIcon className="mr-2 h-4 w-4" />
+                            <span>View Details</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <PencilIcon className="mr-2 h-4 w-4" />
+                            <span>Edit Rule</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem>
+                            <ZapIcon className="mr-2 h-4 w-4" />
+                            <span>Test Rule</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive">
+                            <TrashIcon className="mr-2 h-4 w-4" />
+                            <span>Delete Rule</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pb-2">
+                    <div className="bg-muted/50 p-2 rounded-md text-sm font-mono">
+                      <code>{rule.condition}</code>
+                    </div>
+                    <div className="flex gap-2 mt-2">
+                      <Badge variant="outline">{rule.category}</Badge>
+                      <Badge variant="outline">{rule.chain === 'all' ? 'All Chains' : rule.chain}</Badge>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="pt-2 flex justify-between">
+                    <div className="text-xs text-muted-foreground">
+                      Created: {new Date(rule.createdAt).toLocaleDateString()}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Label htmlFor={`toggle-${rule.id}`} className="text-sm">
+                        {rule.enabled ? 'Enabled' : 'Disabled'}
+                      </Label>
+                      <Switch 
+                        id={`toggle-${rule.id}`} 
+                        checked={rule.enabled}
+                        onCheckedChange={() => handleToggleRule(rule.id)}
+                      />
+                    </div>
+                  </CardFooter>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-10 text-muted-foreground">
+                No rules match your filters
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </TabsContent>
-
-        {/* Other tab contents would be similar to the transaction tab */}
-        <TabsContent value="behavioral" className="space-y-6">
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="text-xl font-semibold">Behavioral Rules</h2>
-              <p className="text-muted-foreground mb-4">
-                Create rules based on behavior patterns over time
-              </p>
-              {/* Form would be similar to transaction tab */}
-            </CardContent>
-          </Card>
+        
+        <TabsContent value="enabled">
+          <div className="text-center py-10 text-muted-foreground">
+            Showing only enabled rules
+          </div>
         </TabsContent>
-
-        <TabsContent value="compliance" className="space-y-6">
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="text-xl font-semibold">Compliance Rules</h2>
-              <p className="text-muted-foreground mb-4">
-                Create rules related to regulatory compliance
-              </p>
-              {/* Form would be similar to transaction tab */}
-            </CardContent>
-          </Card>
+        
+        <TabsContent value="disabled">
+          <div className="text-center py-10 text-muted-foreground">
+            Showing only disabled rules
+          </div>
         </TabsContent>
-
-        <TabsContent value="nft" className="space-y-6">
-          <Card>
-            <CardContent className="p-6">
-              <h2 className="text-xl font-semibold">NFT Rules</h2>
-              <p className="text-muted-foreground mb-4">
-                Create rules specific to NFT transactions and events
-              </p>
-              {/* Form would be similar to transaction tab */}
-            </CardContent>
-          </Card>
+        
+        <TabsContent value="templates">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Large Transaction</CardTitle>
+                <CardDescription>Detect unusually large transactions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Badge className="bg-orange-500/20 text-orange-500 mb-2">high</Badge>
+                <div className="bg-muted/50 p-2 rounded-md text-sm font-mono mb-2">
+                  <code>transaction.value > X ETH</code>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" className="w-full">Use Template</Button>
+              </CardFooter>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Suspicious Contract</CardTitle>
+                <CardDescription>Alert on interaction with blacklisted contracts</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Badge className="bg-red-500/20 text-red-500 mb-2">critical</Badge>
+                <div className="bg-muted/50 p-2 rounded-md text-sm font-mono mb-2">
+                  <code>contract.address IN blacklist</code>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" className="w-full">Use Template</Button>
+              </CardFooter>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Gas Price Anomaly</CardTitle>
+                <CardDescription>Detect unusually high gas prices</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Badge className="bg-yellow-500/20 text-yellow-500 mb-2">medium</Badge>
+                <div className="bg-muted/50 p-2 rounded-md text-sm font-mono mb-2">
+                  <code>transaction.gasPrice > 3 * avg</code>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button variant="outline" className="w-full">Use Template</Button>
+              </CardFooter>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
