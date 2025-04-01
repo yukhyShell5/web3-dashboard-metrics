@@ -14,7 +14,7 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className="w-64 bg-sidebar border-r border-border flex-shrink-0 fixed h-screen flex flex-col">
+    <div className="w-64 bg-sidebar border-r border-border flex-shrink-0 fixed h-screen flex flex-col z-50">
       <div className="p-4 border-b border-border">
         <div className="flex items-center gap-2">
           <ShieldAlertIcon className="h-6 w-6 text-primary" />
