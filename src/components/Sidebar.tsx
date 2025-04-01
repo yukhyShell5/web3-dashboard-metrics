@@ -2,6 +2,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { HomeIcon, PieChartIcon, LayoutDashboardIcon, AlertTriangleIcon, Settings2Icon, ShieldAlertIcon } from 'lucide-react';
+import { ScrollArea } from './ui/scroll-area';
 
 const Sidebar = () => {
   const navItems = [
@@ -13,34 +14,38 @@ const Sidebar = () => {
   ];
 
   return (
-    <div className="h-screen w-64 bg-sidebar flex flex-col border-r border-border">
+    <div className="w-64 bg-sidebar border-r border-border flex-shrink-0 fixed h-screen flex flex-col">
       <div className="p-4 border-b border-border">
         <div className="flex items-center gap-2">
           <ShieldAlertIcon className="h-6 w-6 text-primary" />
           <h1 className="text-xl font-bold text-sidebar-foreground">Web3 SOC</h1>
         </div>
       </div>
-      <nav className="flex-1 p-4">
-        <ul className="space-y-2">
-          {navItems.map((item) => (
-            <li key={item.path}>
-              <NavLink
-                to={item.path}
-                className={({ isActive }) =>
-                  `flex items-center gap-2 p-2 rounded-md transition-colors ${
-                    isActive
-                      ? 'bg-primary/20 text-primary'
-                      : 'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground'
-                  }`
-                }
-              >
-                {item.icon}
-                <span>{item.name}</span>
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-      </nav>
+      
+      <ScrollArea className="flex-1">
+        <nav className="p-4">
+          <ul className="space-y-2">
+            {navItems.map((item) => (
+              <li key={item.path}>
+                <NavLink
+                  to={item.path}
+                  className={({ isActive }) =>
+                    `flex items-center gap-2 p-2 rounded-md transition-colors ${
+                      isActive
+                        ? 'bg-primary/20 text-primary'
+                        : 'text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground'
+                    }`
+                  }
+                >
+                  {item.icon}
+                  <span>{item.name}</span>
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </ScrollArea>
+      
       <div className="p-4 border-t border-border">
         <div className="flex items-center justify-between">
           <div className="text-xs text-sidebar-foreground/60">
