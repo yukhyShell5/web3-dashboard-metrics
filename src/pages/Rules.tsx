@@ -1,106 +1,203 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from '@/components/ui/select';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger, 
+  DialogFooter,
+  DialogDescription 
+} from '@/components/ui/dialog';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle 
+} from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
-import { MoreHorizontalIcon, SearchIcon, PlusIcon, EyeIcon, PencilIcon, TrashIcon, AlertTriangleIcon, FilterIcon, ArrowDown10Icon, ZapIcon } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-
-// Mock data for rules
-const mockRules = [
-  {
-    id: '1',
-    name: 'Large Transaction Alert',
-    description: 'Alerts when transactions exceed 50 ETH',
-    condition: 'transaction.value > 50 ETH',
-    severity: 'high',
-    enabled: true,
-    createdAt: '2023-07-15T10:30:00Z',
-    category: 'transaction',
-    chain: 'ethereum'
-  },
-  {
-    id: '2',
-    name: 'Suspicious Contract Interaction',
-    description: 'Alerts when monitored addresses interact with flagged contracts',
-    condition: 'contract.address IN blacklistedContracts',
-    severity: 'critical',
-    enabled: true,
-    createdAt: '2023-07-20T11:45:00Z',
-    category: 'smart-contract',
-    chain: 'all'
-  },
-  {
-    id: '3',
-    name: 'Unusual Gas Price',
-    description: 'Detects transactions with unusually high gas prices',
-    condition: 'transaction.gasPrice > 3 * averageGasPrice',
-    severity: 'medium',
-    enabled: false,
-    createdAt: '2023-07-25T15:20:00Z',
-    category: 'gas',
-    chain: 'ethereum'
-  },
-  {
-    id: '4',
-    name: 'Multiple Failed Transactions',
-    description: 'Alerts when an address has multiple failed transactions in a short period',
-    condition: 'count(failedTransactions) > 5 within 1 hour',
-    severity: 'low',
-    enabled: true,
-    createdAt: '2023-08-01T09:10:00Z',
-    category: 'transaction',
-    chain: 'all'
-  },
-  {
-    id: '5',
-    name: 'New Address Interaction',
-    description: 'Detects when monitored addresses interact with new addresses',
-    condition: 'receiver NOT IN knownAddresses',
-    severity: 'info',
-    enabled: true,
-    createdAt: '2023-08-05T14:30:00Z',
-    category: 'address',
-    chain: 'all'
-  },
-];
+import { 
+  AlertCircleIcon, 
+  MoreVerticalIcon, 
+  PlusIcon, 
+  SearchIcon, 
+  CheckIcon, 
+  XIcon,
+  InfoIcon,
+  AlertTriangleIcon,
+  PauseCircleIcon,
+  PlayCircleIcon,
+  ScrollTextIcon,
+  BookIcon
+} from 'lucide-react';
 
 const Rules = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [rules, setRules] = useState(mockRules);
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedChain, setSelectedChain] = useState('all');
+  
+  // Mock rules data
+  const rules = [
+    {
+      id: '1',
+      name: 'High Value Transfer',
+      description: 'Alert on transfers over 100 ETH',
+      severity: 'high',
+      category: 'transaction',
+      status: 'active',
+      created: '2023-07-15T10:30:00Z',
+      triggers: 24,
+    },
+    {
+      id: '2',
+      name: 'Smart Contract Interaction',
+      description: 'Alert when specific addresses interact with flagged contracts',
+      severity: 'medium',
+      category: 'smart-contract',
+      status: 'active',
+      created: '2023-07-20T11:45:00Z',
+      triggers: 56,
+    },
+    {
+      id: '3',
+      name: 'MEV Detection',
+      description: 'Detect potential MEV activity in transactions',
+      severity: 'critical',
+      category: 'transaction',
+      status: 'paused',
+      created: '2023-07-25T15:20:00Z',
+      triggers: 17,
+    },
+    {
+      id: '4',
+      name: 'Gas Anomaly',
+      description: 'Alert on unusual gas price patterns',
+      severity: 'low',
+      category: 'gas',
+      status: 'active',
+      created: '2023-08-01T09:10:00Z',
+      triggers: 42,
+    },
+    {
+      id: '5',
+      name: 'New Contract Deployment',
+      description: 'Alert when monitored addresses deploy new contracts',
+      severity: 'medium',
+      category: 'smart-contract',
+      status: 'active',
+      created: '2023-08-05T13:25:00Z',
+      triggers: 8,
+    },
+  ];
 
-  const handleToggleRule = (ruleId: string) => {
-    setRules(rules.map(rule => 
-      rule.id === ruleId ? { ...rule, enabled: !rule.enabled } : rule
-    ));
+  // Mock templates
+  const ruleTemplates = [
+    {
+      id: 'template-1',
+      name: 'Suspicious Transfer Template',
+      description: 'Template for detecting suspicious transfers',
+      category: 'transaction',
+      complexity: 'simple',
+    },
+    {
+      id: 'template-2',
+      name: 'Contract Monitoring Template',
+      description: 'Template for monitoring smart contract activity',
+      category: 'smart-contract',
+      complexity: 'advanced',
+    },
+    {
+      id: 'template-3',
+      name: 'Gas Price Monitoring Template',
+      description: 'Template for monitoring gas price anomalies',
+      category: 'gas',
+      complexity: 'medium',
+    },
+  ];
+
+  const filteredRules = rules.filter(rule => 
+    rule.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    rule.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const getSeverityBadge = (severity: string) => {
+    switch (severity) {
+      case 'critical':
+        return <Badge variant="outline" className="alert-badge-critical">Critical</Badge>;
+      case 'high':
+        return <Badge variant="outline" className="alert-badge-high">High</Badge>;
+      case 'medium':
+        return <Badge variant="outline" className="alert-badge-medium">Medium</Badge>;
+      case 'low':
+        return <Badge variant="outline" className="alert-badge-low">Low</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
   };
 
-  const filteredRules = rules.filter(rule => {
-    const matchesSearch = rule.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         rule.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || rule.category === selectedCategory;
-    const matchesChain = selectedChain === 'all' || rule.chain === selectedChain || rule.chain === 'all';
-    
-    return matchesSearch && matchesCategory && matchesChain;
-  });
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return (
+          <div className="flex items-center gap-1 text-green-500">
+            <CheckIcon className="h-3 w-3" />
+            <span>Active</span>
+          </div>
+        );
+      case 'paused':
+        return (
+          <div className="flex items-center gap-1 text-amber-500">
+            <PauseCircleIcon className="h-3 w-3" />
+            <span>Paused</span>
+          </div>
+        );
+      case 'disabled':
+        return (
+          <div className="flex items-center gap-1 text-gray-500">
+            <XIcon className="h-3 w-3" />
+            <span>Disabled</span>
+          </div>
+        );
+      default:
+        return <span>Unknown</span>;
+    }
+  };
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity) {
-      case 'critical': return 'bg-red-500/20 text-red-500';
-      case 'high': return 'bg-orange-500/20 text-orange-500';
-      case 'medium': return 'bg-yellow-500/20 text-yellow-500';
-      case 'low': return 'bg-blue-500/20 text-blue-500';
-      case 'info': return 'bg-green-500/20 text-green-500';
-      default: return 'bg-gray-500/20 text-gray-500';
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'transaction':
+        return <ScrollTextIcon className="h-4 w-4" />;
+      case 'smart-contract':
+        return <BookIcon className="h-4 w-4" />;
+      case 'gas':
+        return <InfoIcon className="h-4 w-4" />;
+      default:
+        return <AlertCircleIcon className="h-4 w-4" />;
     }
   };
 
@@ -109,7 +206,7 @@ const Rules = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Alert Rules</h1>
-          <p className="text-muted-foreground">Create and manage detection rules</p>
+          <p className="text-muted-foreground">Configure detection rules for blockchain activity</p>
         </div>
         <Dialog>
           <DialogTrigger asChild>
@@ -122,303 +219,260 @@ const Rules = () => {
             <DialogHeader>
               <DialogTitle>Create New Alert Rule</DialogTitle>
               <DialogDescription>
-                Define conditions that will trigger alerts when matched.
+                Configure when and how alerts are triggered for monitored addresses
               </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="rule-name" className="text-right">
-                  Rule Name
-                </Label>
-                <Input id="rule-name" placeholder="Enter rule name" className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="description" className="text-right">
-                  Description
-                </Label>
-                <Input id="description" placeholder="Rule description" className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="category" className="text-right">
-                  Category
-                </Label>
-                <Select defaultValue="transaction">
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="transaction">Transaction</SelectItem>
-                    <SelectItem value="smart-contract">Smart Contract</SelectItem>
-                    <SelectItem value="gas">Gas</SelectItem>
-                    <SelectItem value="address">Address</SelectItem>
-                    <SelectItem value="custom">Custom</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="severity" className="text-right">
-                  Severity
-                </Label>
-                <Select defaultValue="medium">
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select severity" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="critical">Critical</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="info">Info</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="chain" className="text-right">
-                  Blockchain
-                </Label>
-                <Select defaultValue="all">
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select blockchain" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Chains</SelectItem>
-                    <SelectItem value="ethereum">Ethereum</SelectItem>
-                    <SelectItem value="polygon">Polygon</SelectItem>
-                    <SelectItem value="arbitrum">Arbitrum</SelectItem>
-                    <SelectItem value="optimism">Optimism</SelectItem>
-                    <SelectItem value="base">Base</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="condition" className="text-right">
-                  Condition
-                </Label>
-                <div className="col-span-3">
-                  <textarea
-                    id="condition"
-                    placeholder="Enter alert condition"
-                    className="flex h-20 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">Example: transaction.value > 50 ETH</p>
+            <Tabs defaultValue="blank">
+              <TabsList className="grid grid-cols-2 mb-4">
+                <TabsTrigger value="blank">Start from scratch</TabsTrigger>
+                <TabsTrigger value="template">Use a template</TabsTrigger>
+              </TabsList>
+              <TabsContent value="blank" className="space-y-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="name" className="text-right">
+                    Rule Name
+                  </Label>
+                  <Input id="name" placeholder="Descriptive name" className="col-span-3" />
                 </div>
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <div className="col-span-4 flex items-center justify-end space-x-2">
-                  <Checkbox id="enable" defaultChecked />
-                  <Label htmlFor="enable">Enable rule immediately</Label>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="severity" className="text-right">
+                    Severity
+                  </Label>
+                  <Select>
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Select severity" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="critical">Critical</SelectItem>
+                      <SelectItem value="high">High</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="low">Low</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </div>
-            </div>
-            <DialogFooter>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="description" className="text-right">
+                    Description
+                  </Label>
+                  <Input id="description" placeholder="Rule description" className="col-span-3" />
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label className="text-right">
+                    Trigger conditions
+                  </Label>
+                  <div className="col-span-3">
+                    <div className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="condition1" />
+                        <Label htmlFor="condition1">Transaction value {">"} X ETH</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="condition2" />
+                        <Label htmlFor="condition2">Contract interaction</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="condition3" />
+                        <Label htmlFor="condition3">Gas price anomaly</Label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+              <TabsContent value="template" className="space-y-4">
+                <div className="grid grid-cols-1 gap-2">
+                  {ruleTemplates.map(template => (
+                    <Card key={template.id}>
+                      <CardHeader className="py-3">
+                        <CardTitle className="text-sm font-medium">{template.name}</CardTitle>
+                        <CardDescription className="text-xs">{template.description}</CardDescription>
+                      </CardHeader>
+                      <CardContent className="py-2">
+                        <div className="flex justify-between items-center">
+                          <Badge>{template.category}</Badge>
+                          <Button size="sm" variant="outline">Use Template</Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+            </Tabs>
+            <DialogFooter className="mt-4">
               <Button type="submit">Create Rule</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      <Tabs defaultValue="all" className="w-full">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0 mb-4">
-          <TabsList>
-            <TabsTrigger value="all">All Rules</TabsTrigger>
-            <TabsTrigger value="enabled">Enabled</TabsTrigger>
-            <TabsTrigger value="disabled">Disabled</TabsTrigger>
-            <TabsTrigger value="templates">Templates</TabsTrigger>
-          </TabsList>
-          
-          <div className="flex space-x-2">
-            <div className="relative">
-              <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search rules..." 
-                className="pl-8 w-60"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Button variant="outline" size="icon">
-              <FilterIcon className="h-4 w-4" />
-            </Button>
-          </div>
+      <div className="flex items-center space-x-2">
+        <div className="relative flex-1 max-w-sm">
+          <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search rules..."
+            className="pl-8"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </div>
+        <Select defaultValue="all">
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="All severities" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All severities</SelectItem>
+            <SelectItem value="critical">Critical</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="low">Low</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select defaultValue="all-status">
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all-status">All status</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="paused">Paused</SelectItem>
+            <SelectItem value="disabled">Disabled</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-        <TabsContent value="all" className="space-y-4">
-          <div className="flex flex-wrap gap-2 mb-4">
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="transaction">Transaction</SelectItem>
-                <SelectItem value="smart-contract">Smart Contract</SelectItem>
-                <SelectItem value="gas">Gas</SelectItem>
-                <SelectItem value="address">Address</SelectItem>
-              </SelectContent>
-            </Select>
-            
-            <Select value={selectedChain} onValueChange={setSelectedChain}>
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="Blockchain" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Chains</SelectItem>
-                <SelectItem value="ethereum">Ethereum</SelectItem>
-                <SelectItem value="polygon">Polygon</SelectItem>
-                <SelectItem value="arbitrum">Arbitrum</SelectItem>
-                <SelectItem value="optimism">Optimism</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle>Alert Rules</CardTitle>
+          <CardDescription>
+            Rules that trigger alerts based on blockchain activity
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Severity</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Triggers</TableHead>
+                <TableHead></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredRules.map((rule) => (
+                <TableRow key={rule.id}>
+                  <TableCell>
+                    <div>
+                      <div className="font-medium">{rule.name}</div>
+                      <div className="text-xs text-muted-foreground">{rule.description}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {getCategoryIcon(rule.category)}
+                      <span className="capitalize">{rule.category.replace('-', ' ')}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{getSeverityBadge(rule.severity)}</TableCell>
+                  <TableCell>{getStatusBadge(rule.status)}</TableCell>
+                  <TableCell className="text-right">{rule.triggers}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreVerticalIcon className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem>Edit</DropdownMenuItem>
+                        <DropdownMenuItem>Duplicate</DropdownMenuItem>
+                        <DropdownMenuItem>
+                          {rule.status === 'active' ? 'Pause' : 'Activate'}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-          <div className="space-y-4">
-            {filteredRules.length > 0 ? (
-              filteredRules.map((rule) => (
-                <Card key={rule.id} className="relative">
-                  <CardHeader className="pb-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <CardTitle className="text-lg flex items-center gap-2">
-                          {rule.name}
-                          <Badge className={getSeverityColor(rule.severity)}>
-                            {rule.severity}
-                          </Badge>
-                          {!rule.enabled && (
-                            <Badge variant="outline" className="text-muted-foreground">
-                              Disabled
-                            </Badge>
-                          )}
-                        </CardTitle>
-                        <CardDescription>{rule.description}</CardDescription>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontalIcon className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem>
-                            <EyeIcon className="mr-2 h-4 w-4" />
-                            <span>View Details</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <PencilIcon className="mr-2 h-4 w-4" />
-                            <span>Edit Rule</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <ZapIcon className="mr-2 h-4 w-4" />
-                            <span>Test Rule</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">
-                            <TrashIcon className="mr-2 h-4 w-4" />
-                            <span>Delete Rule</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pb-2">
-                    <div className="bg-muted/50 p-2 rounded-md text-sm font-mono">
-                      <code>{rule.condition}</code>
-                    </div>
-                    <div className="flex gap-2 mt-2">
-                      <Badge variant="outline">{rule.category}</Badge>
-                      <Badge variant="outline">{rule.chain === 'all' ? 'All Chains' : rule.chain}</Badge>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="pt-2 flex justify-between">
-                    <div className="text-xs text-muted-foreground">
-                      Created: {new Date(rule.createdAt).toLocaleDateString()}
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Label htmlFor={`toggle-${rule.id}`} className="text-sm">
-                        {rule.enabled ? 'Enabled' : 'Disabled'}
-                      </Label>
-                      <Switch 
-                        id={`toggle-${rule.id}`} 
-                        checked={rule.enabled}
-                        onCheckedChange={() => handleToggleRule(rule.id)}
-                      />
-                    </div>
-                  </CardFooter>
-                </Card>
-              ))
-            ) : (
-              <div className="text-center py-10 text-muted-foreground">
-                No rules match your filters
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Rule Statistics</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div>Active Rules</div>
+                <div className="font-bold">4</div>
               </div>
-            )}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="enabled">
-          <div className="text-center py-10 text-muted-foreground">
-            Showing only enabled rules
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="disabled">
-          <div className="text-center py-10 text-muted-foreground">
-            Showing only disabled rules
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="templates">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Large Transaction</CardTitle>
-                <CardDescription>Detect unusually large transactions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Badge className="bg-orange-500/20 text-orange-500 mb-2">high</Badge>
-                <div className="bg-muted/50 p-2 rounded-md text-sm font-mono mb-2">
-                  <code>transaction.value > X ETH</code>
+              <div className="flex justify-between items-center">
+                <div>Paused Rules</div>
+                <div className="font-bold">1</div>
+              </div>
+              <div className="flex justify-between items-center">
+                <div>Total Triggers (30 days)</div>
+                <div className="font-bold">147</div>
+              </div>
+              <div className="flex justify-between items-center">
+                <div>Most Active Rule</div>
+                <div className="font-bold">Smart Contract Interaction</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Recent Rule Activity</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex gap-2 items-start">
+                <div className="bg-green-500/20 text-green-500 p-1 rounded">
+                  <CheckIcon className="h-4 w-4" />
                 </div>
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" className="w-full">Use Template</Button>
-              </CardFooter>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Suspicious Contract</CardTitle>
-                <CardDescription>Alert on interaction with blacklisted contracts</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Badge className="bg-red-500/20 text-red-500 mb-2">critical</Badge>
-                <div className="bg-muted/50 p-2 rounded-md text-sm font-mono mb-2">
-                  <code>contract.address IN blacklist</code>
+                <div>
+                  <div className="text-sm font-medium">Rule Activated</div>
+                  <div className="text-xs text-muted-foreground">High Value Transfer - 2 hours ago</div>
                 </div>
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" className="w-full">Use Template</Button>
-              </CardFooter>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>Gas Price Anomaly</CardTitle>
-                <CardDescription>Detect unusually high gas prices</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Badge className="bg-yellow-500/20 text-yellow-500 mb-2">medium</Badge>
-                <div className="bg-muted/50 p-2 rounded-md text-sm font-mono mb-2">
-                  <code>transaction.gasPrice > 3 * avg</code>
+              </div>
+              <div className="flex gap-2 items-start">
+                <div className="bg-orange-500/20 text-orange-500 p-1 rounded">
+                  <AlertTriangleIcon className="h-4 w-4" />
                 </div>
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" className="w-full">Use Template</Button>
-              </CardFooter>
-            </Card>
-          </div>
-        </TabsContent>
-      </Tabs>
+                <div>
+                  <div className="text-sm font-medium">Rule Modified</div>
+                  <div className="text-xs text-muted-foreground">Gas Anomaly - 1 day ago</div>
+                </div>
+              </div>
+              <div className="flex gap-2 items-start">
+                <div className="bg-blue-500/20 text-blue-500 p-1 rounded">
+                  <PlusIcon className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="text-sm font-medium">Rule Created</div>
+                  <div className="text-xs text-muted-foreground">New Contract Deployment - 3 days ago</div>
+                </div>
+              </div>
+              <div className="flex gap-2 items-start">
+                <div className="bg-amber-500/20 text-amber-500 p-1 rounded">
+                  <PauseCircleIcon className="h-4 w-4" />
+                </div>
+                <div>
+                  <div className="text-sm font-medium">Rule Paused</div>
+                  <div className="text-xs text-muted-foreground">MEV Detection - 5 days ago</div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
