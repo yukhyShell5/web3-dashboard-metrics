@@ -7,8 +7,6 @@ import BarChart from '@/components/charts/BarChart';
 import LineChart from '@/components/charts/LineChart';
 import PieChart from '@/components/charts/PieChart';
 import { Button } from '@/components/ui/button';
-import { getPrimaryDashboard, useDashboardStore } from '@/services/dashboardService';
-import { Link } from 'react-router-dom';
 
 // Mock data for charts with 1-hour intervals
 const activityData = [
@@ -55,23 +53,12 @@ const alertsBySeverityData = [
 ];
 
 const Home = () => {
-  const primaryDashboard = useDashboardStore(state => state.dashboards.find(d => d.isPrimary));
-
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Dashboard Overview</h1>
-          {primaryDashboard && (
-            <p className="text-muted-foreground">
-              Displaying primary dashboard: {primaryDashboard.title}
-            </p>
-          )}
-        </div>
-        <Button className="flex items-center gap-2" asChild>
-          <Link to="/dashboards">
-            Manage Dashboards <ArrowUpRightIcon className="h-4 w-4" />
-          </Link>
+        <h1 className="text-3xl font-bold">Dashboard Overview</h1>
+        <Button className="flex items-center gap-2">
+          View All Analytics <ArrowUpRightIcon className="h-4 w-4" />
         </Button>
       </div>
 

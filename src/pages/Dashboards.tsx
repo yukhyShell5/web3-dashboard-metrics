@@ -7,10 +7,44 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlusIcon, LayoutDashboardIcon, LineChartIcon, BarChart2Icon, PieChartIcon, AreaChartIcon, SearchIcon, MoveIcon, ArrowUpIcon, ArrowDownIcon, EditIcon, TrashIcon } from 'lucide-react';
+import { PlusIcon, LayoutDashboardIcon, LineChartIcon, BarChart2Icon, PieChartIcon, AreaChartIcon, SearchIcon } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-import { Dashboard, useDashboardStore } from '@/services/dashboardService';
+
+// Mock data for dashboards
+const mockDashboards = [
+  {
+    id: '1',
+    title: 'Web3 Security Overview',
+    description: 'High-level security metrics for monitored addresses',
+    charts: 8,
+    createdAt: '2023-07-15T10:30:00Z',
+    updatedAt: '2023-08-10T14:22:00Z',
+  },
+  {
+    id: '2',
+    title: 'Smart Contract Monitor',
+    description: 'Detailed analytics for smart contract interactions',
+    charts: 6,
+    createdAt: '2023-07-20T11:45:00Z',
+    updatedAt: '2023-08-09T09:15:00Z',
+  },
+  {
+    id: '3',
+    title: 'Transaction Analysis',
+    description: 'Deep dive into transaction patterns and anomalies',
+    charts: 10,
+    createdAt: '2023-07-25T15:20:00Z',
+    updatedAt: '2023-08-08T16:30:00Z',
+  },
+  {
+    id: '4',
+    title: 'DeFi Risk Monitor',
+    description: 'Monitor DeFi protocols and risk exposure',
+    charts: 7,
+    createdAt: '2023-08-01T09:10:00Z',
+    updatedAt: '2023-08-07T11:45:00Z',
+  },
+];
 
 // Mock data for chart templates
 const chartTemplates = [
@@ -24,75 +58,17 @@ const chartTemplates = [
 
 const Dashboards = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const dashboards = useDashboardStore(state => state.dashboards);
-  const setPrimaryDashboard = useDashboardStore(state => state.setPrimaryDashboard);
+  const [dashboards, setDashboards] = useState(mockDashboards);
   const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
-  const [layoutItems, setLayoutItems] = useState<{id: string, type: string, title: string, content: React.ReactNode}[]>([]);
-  const [isEditing, setIsEditing] = useState(false);
-  const [newDashboardData, setNewDashboardData] = useState({
-    title: '',
-    description: '',
-    isPrimary: false
-  });
 
   const handleAddChart = (chartId: string) => {
     if (!selectedCharts.includes(chartId)) {
       setSelectedCharts([...selectedCharts, chartId]);
-      
-      // Find the chart template
-      const chartTemplate = chartTemplates.find(chart => chart.id === chartId);
-      if (chartTemplate) {
-        // Add to layout items
-        setLayoutItems([...layoutItems, {
-          id: `layout-${Date.now()}-${chartId}`,
-          type: chartTemplate.type,
-          title: chartTemplate.title,
-          content: chartTemplate.icon
-        }]);
-      }
     }
   };
 
   const handleRemoveChart = (chartId: string) => {
     setSelectedCharts(selectedCharts.filter(id => id !== chartId));
-  };
-
-  const onDragEnd = (result: any) => {
-    if (!result.destination) return;
-    
-    if (result.type === 'dashboards') {
-      const items = Array.from(dashboards);
-      const [reorderedItem] = items.splice(result.source.index, 1);
-      items.splice(result.destination.index, 0, reorderedItem);
-      // Update dashboards order if needed
-    } else if (result.type === 'layout-items') {
-      const items = [...layoutItems];
-      const [reorderedItem] = items.splice(result.source.index, 1);
-      items.splice(result.destination.index, 0, reorderedItem);
-      setLayoutItems(items);
-    }
-  };
-
-  const handleCreateDashboard = () => {
-    const addDashboard = useDashboardStore.getState().addDashboard;
-    
-    addDashboard({
-      title: newDashboardData.title || 'Untitled Dashboard',
-      description: newDashboardData.description || 'No description provided',
-      charts: layoutItems.length,
-      isPrimary: newDashboardData.isPrimary,
-      layout: layoutItems.map(item => ({
-        id: item.id,
-        type: item.type as any,
-        title: item.title
-      }))
-    });
-    
-    // Reset form
-    setNewDashboardData({ title: '', description: '', isPrimary: false });
-    setSelectedCharts([]);
-    setLayoutItems([]);
-    setIsEditing(false);
   };
 
   const filteredDashboards = dashboards.filter(dashboard => 
@@ -114,166 +90,45 @@ const Dashboards = () => {
               Create Dashboard
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[80%] max-h-[90vh]">
+          <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>Create New Dashboard</DialogTitle>
               <DialogDescription>
                 Design a custom dashboard with the charts and metrics you need.
               </DialogDescription>
             </DialogHeader>
-
-            <Tabs defaultValue="details" className="w-full h-full">
-              <TabsList className="grid grid-cols-3 mb-4">
-                <TabsTrigger value="details">Dashboard Details</TabsTrigger>
-                <TabsTrigger value="charts">Add Charts</TabsTrigger>
-                <TabsTrigger value="layout">Layout Designer</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="details" className="space-y-4">
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                      Name
-                    </Label>
-                    <Input 
-                      id="name" 
-                      placeholder="Dashboard name" 
-                      className="col-span-3"
-                      value={newDashboardData.title}
-                      onChange={(e) => setNewDashboardData({...newDashboardData, title: e.target.value})}
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="description" className="text-right">
-                      Description
-                    </Label>
-                    <Input 
-                      id="description" 
-                      placeholder="Brief description" 
-                      className="col-span-3" 
-                      value={newDashboardData.description}
-                      onChange={(e) => setNewDashboardData({...newDashboardData, description: e.target.value})}
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="primary" className="text-right">
-                      Set as primary
-                    </Label>
-                    <div className="col-span-3">
-                      <p className="text-sm text-muted-foreground">
-                        If checked, this dashboard will appear on the home page.
-                      </p>
-                      <input 
-                        type="checkbox" 
-                        id="primary" 
-                        className="mt-2"
-                        checked={newDashboardData.isPrimary}
-                        onChange={(e) => setNewDashboardData({...newDashboardData, isPrimary: e.target.checked})}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="charts" className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">
+                  Name
+                </Label>
+                <Input id="name" placeholder="Dashboard name" className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="description" className="text-right">
+                  Description
+                </Label>
+                <Input id="description" placeholder="Brief description" className="col-span-3" />
+              </div>
+              <div className="mt-2">
+                <Label>Select Charts</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
                   {chartTemplates.map((chart) => (
-                    <Card 
-                      key={chart.id} 
-                      className={`cursor-pointer transition-all ${selectedCharts.includes(chart.id) ? 'ring-2 ring-primary' : ''}`}
+                    <Button
+                      key={chart.id}
+                      variant={selectedCharts.includes(chart.id) ? "default" : "outline"}
                       onClick={() => selectedCharts.includes(chart.id) ? handleRemoveChart(chart.id) : handleAddChart(chart.id)}
+                      className="h-auto p-4 justify-start gap-2"
                     >
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          {chart.icon}
-                          {chart.title}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-xs text-muted-foreground">{chart.type} chart</p>
-                      </CardContent>
-                    </Card>
+                      {chart.icon}
+                      <span>{chart.title}</span>
+                    </Button>
                   ))}
                 </div>
-              </TabsContent>
-
-              <TabsContent value="layout" className="h-[60vh] overflow-auto">
-                <div className="flex flex-col h-full">
-                  <div className="bg-muted/50 p-4 mb-4 rounded-lg">
-                    <p className="font-medium mb-2">Dashboard Layout Editor</p>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Drag and drop charts to create your perfect dashboard layout. Panels can be resized.
-                    </p>
-                    {selectedCharts.length === 0 && (
-                      <div className="text-center p-4 border border-dashed rounded-lg">
-                        <p>Select charts from the "Add Charts" tab first</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {selectedCharts.length > 0 && (
-                    <DragDropContext onDragEnd={onDragEnd}>
-                      <Droppable droppableId="layout-items" direction="vertical" type="layout-items">
-                        {(provided) => (
-                          <div 
-                            {...provided.droppableProps} 
-                            ref={provided.innerRef}
-                            className="flex-1"
-                          >
-                            <ResizablePanelGroup direction="vertical" className="min-h-[500px]">
-                              {layoutItems.map((item, index) => (
-                                <Draggable key={item.id} draggableId={item.id} index={index}>
-                                  {(provided) => (
-                                    <div
-                                      ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                      className="mb-4"
-                                    >
-                                      <ResizablePanel defaultSize={20}>
-                                        <Card className="h-full">
-                                          <CardHeader className="pb-2">
-                                            <div className="flex justify-between items-center">
-                                              <CardTitle className="text-base">{item.title}</CardTitle>
-                                              <div className="flex gap-1">
-                                                <Button 
-                                                  variant="ghost" 
-                                                  size="icon" 
-                                                  className="h-6 w-6"
-                                                  {...provided.dragHandleProps}
-                                                >
-                                                  <MoveIcon className="h-4 w-4" />
-                                                </Button>
-                                              </div>
-                                            </div>
-                                          </CardHeader>
-                                          <CardContent className="flex items-center justify-center h-40">
-                                            <div className="text-muted-foreground">
-                                              {item.content}
-                                            </div>
-                                          </CardContent>
-                                        </Card>
-                                      </ResizablePanel>
-                                      {index < layoutItems.length - 1 && (
-                                        <ResizableHandle />
-                                      )}
-                                    </div>
-                                  )}
-                                </Draggable>
-                              ))}
-                              {provided.placeholder}
-                            </ResizablePanelGroup>
-                          </div>
-                        )}
-                      </Droppable>
-                    </DragDropContext>
-                  )}
-                </div>
-              </TabsContent>
-            </Tabs>
-            
-            <DialogFooter className="mt-4">
-              <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-              <Button type="submit" onClick={handleCreateDashboard}>Create Dashboard</Button>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="submit">Create Dashboard</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -302,75 +157,98 @@ const Dashboards = () => {
         </Select>
       </div>
 
-      <DragDropContext onDragEnd={onDragEnd}>
-        <Droppable droppableId="dashboards" type="dashboards">
-          {(provided) => (
-            <div 
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-            >
-              {filteredDashboards.map((dashboard, index) => (
-                <Draggable key={dashboard.id} draggableId={dashboard.id} index={index}>
-                  {(provided) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                    >
-                      <Card className="hover:shadow-md transition-shadow">
-                        <CardHeader className="pb-2">
-                          <div className="flex items-center justify-between">
-                            <CardTitle>{dashboard.title}</CardTitle>
-                            <div className="flex items-center" {...provided.dragHandleProps}>
-                              <MoveIcon className="h-4 w-4 text-muted-foreground cursor-move" />
-                            </div>
-                          </div>
-                          <CardDescription>{dashboard.description}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="text-muted-foreground flex items-center gap-1">
-                              {dashboard.charts} charts
-                            </div>
-                            <div className="text-muted-foreground">
-                              Updated {new Date(dashboard.updatedAt).toLocaleDateString()}
-                            </div>
-                          </div>
-                          {dashboard.isPrimary && (
-                            <div className="mt-2 text-xs bg-primary/20 text-primary rounded-full px-2 py-1 inline-flex items-center">
-                              <span>Primary Dashboard</span>
-                            </div>
-                          )}
-                        </CardContent>
-                        <CardFooter className="pt-2 justify-between">
-                          <div>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className={`${dashboard.isPrimary ? 'text-primary' : ''}`}
-                              onClick={() => setPrimaryDashboard(dashboard.id)}
-                              disabled={dashboard.isPrimary}
-                            >
-                              {dashboard.isPrimary ? 'Primary' : 'Set as primary'}
-                            </Button>
-                          </div>
-                          <div className="flex gap-1">
-                            <Button variant="outline" size="icon" className="h-8 w-8">
-                              <EditIcon className="h-4 w-4" />
-                            </Button>
-                            <Button variant="default" size="sm">View</Button>
-                          </div>
-                        </CardFooter>
-                      </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {filteredDashboards.map((dashboard) => (
+          <Card key={dashboard.id} className="hover:shadow-md transition-shadow">
+            <CardHeader className="pb-2">
+              <CardTitle>{dashboard.title}</CardTitle>
+              <CardDescription>{dashboard.description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between text-sm">
+                <div className="text-muted-foreground">
+                  {dashboard.charts} charts
+                </div>
+                <div className="text-muted-foreground">
+                  Updated {new Date(dashboard.updatedAt).toLocaleDateString()}
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between pt-2">
+              <Button variant="outline" size="sm">Preview</Button>
+              <Button variant="default" size="sm">Edit</Button>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Dashboard Builder</CardTitle>
+          <CardDescription>
+            Drag and drop components to create custom dashboards for your Web3 monitoring needs
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="templates">
+            <TabsList className="grid grid-cols-3 mb-4">
+              <TabsTrigger value="templates">Chart Templates</TabsTrigger>
+              <TabsTrigger value="data-sources">Data Sources</TabsTrigger>
+              <TabsTrigger value="layout">Layout</TabsTrigger>
+            </TabsList>
+            <TabsContent value="templates" className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {chartTemplates.map((chart) => (
+                  <Button
+                    key={chart.id}
+                    variant="outline"
+                    className="h-auto p-6 justify-start flex-col items-center gap-4"
+                  >
+                    <div className="p-4 bg-secondary rounded-full">
+                      {chart.icon}
                     </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+                    <div className="text-center">
+                      <h3 className="font-medium">{chart.title}</h3>
+                      <p className="text-xs text-muted-foreground">{chart.type} chart</p>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+            </TabsContent>
+            <TabsContent value="data-sources">
+              <div className="p-4 border rounded-md bg-muted/50">
+                <h3 className="font-medium mb-2">Available Data Sources</h3>
+                <ul className="space-y-2">
+                  <li className="flex items-center justify-between p-2 border rounded-md bg-background">
+                    <span>Ethereum Blockchain</span>
+                    <Button variant="outline" size="sm">Connect</Button>
+                  </li>
+                  <li className="flex items-center justify-between p-2 border rounded-md bg-background">
+                    <span>Smart Contract Events</span>
+                    <Button variant="outline" size="sm">Connect</Button>
+                  </li>
+                  <li className="flex items-center justify-between p-2 border rounded-md bg-background">
+                    <span>Alert History</span>
+                    <Button variant="outline" size="sm">Connect</Button>
+                  </li>
+                  <li className="flex items-center justify-between p-2 border rounded-md bg-background">
+                    <span>Custom API</span>
+                    <Button variant="outline" size="sm">Connect</Button>
+                  </li>
+                </ul>
+              </div>
+            </TabsContent>
+            <TabsContent value="layout">
+              <div className="p-4 border rounded-md bg-muted/50 text-center">
+                <LayoutDashboardIcon className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                <h3 className="font-medium mb-2">Dashboard Layout Editor</h3>
+                <p className="text-muted-foreground mb-4">Arrange and resize dashboard components</p>
+                <Button>Open Layout Editor</Button>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 };
