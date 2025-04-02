@@ -5,16 +5,35 @@ import ChartCard from '@/components/ChartCard';
 import StatCard from '@/components/StatCard';
 import BarChart from '@/components/charts/BarChart';
 import LineChart from '@/components/charts/LineChart';
+import PieChart from '@/components/charts/PieChart';
 import { Button } from '@/components/ui/button';
 
-// Mock data for charts
+// Mock data for charts with 1-hour intervals
 const activityData = [
-  { time: '00:00', alerts: 5, transactions: 120, events: 45 },
-  { time: '04:00', alerts: 10, transactions: 240, events: 60 },
-  { time: '08:00', alerts: 15, transactions: 300, events: 75 },
-  { time: '12:00', alerts: 8, transactions: 280, events: 80 },
-  { time: '16:00', alerts: 20, transactions: 350, events: 90 },
-  { time: '20:00', alerts: 12, transactions: 200, events: 70 },
+  { time: '00:00', transactions: 120 },
+  { time: '01:00', transactions: 95 },
+  { time: '02:00', transactions: 75 },
+  { time: '03:00', transactions: 60 },
+  { time: '04:00', transactions: 45 },
+  { time: '05:00', transactions: 40 },
+  { time: '06:00', transactions: 65 },
+  { time: '07:00', transactions: 85 },
+  { time: '08:00', transactions: 160 },
+  { time: '09:00', transactions: 220 },
+  { time: '10:00', transactions: 280 },
+  { time: '11:00', transactions: 310 },
+  { time: '12:00', transactions: 290 },
+  { time: '13:00', transactions: 275 },
+  { time: '14:00', transactions: 310 },
+  { time: '15:00', transactions: 340 },
+  { time: '16:00', transactions: 350 },
+  { time: '17:00', transactions: 325 },
+  { time: '18:00', transactions: 290 },
+  { time: '19:00', transactions: 265 },
+  { time: '20:00', transactions: 240 },
+  { time: '21:00', transactions: 210 },
+  { time: '22:00', transactions: 180 },
+  { time: '23:00', transactions: 150 },
 ];
 
 const alertsByTypeData = [
@@ -77,9 +96,7 @@ const Home = () => {
             xDataKey="time" 
             height={300}
             bars={[
-              { dataKey: 'alerts', fill: '#ef4444', name: 'Alerts' },
-              { dataKey: 'transactions', fill: '#3b82f6', name: 'Transactions' },
-              { dataKey: 'events', fill: '#22c55e', name: 'Events' }
+              { dataKey: 'transactions', fill: '#3b82f6', name: 'Transactions' }
             ]}
           />
         </ChartCard>
