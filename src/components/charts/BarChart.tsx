@@ -29,12 +29,12 @@ const BarChart: React.FC<BarChartProps> = ({ data, xDataKey, bars, height = 300,
         <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
         <XAxis 
           dataKey={xDataKey} 
-          tick={{ fill: 'var(--foreground)', fontSize: 12 }}
-          axisLine={{ stroke: 'var(--border)' }}
+          tick={{ fill: '#FFFFFF', fontSize: 12 }}
+          axisLine={{ stroke: 'rgba(255, 255, 255, 0.3)' }}
         />
         <YAxis 
-          tick={{ fill: 'var(--foreground)', fontSize: 12 }}
-          axisLine={{ stroke: 'var(--border)' }}
+          tick={{ fill: '#FFFFFF', fontSize: 12 }}
+          axisLine={{ stroke: 'rgba(255, 255, 255, 0.3)' }}
         />
         <Tooltip 
           contentStyle={{ 

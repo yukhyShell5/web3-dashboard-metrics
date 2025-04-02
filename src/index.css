@@ -90,4 +90,13 @@
   .alert-badge-info {
     @apply bg-green-500/20 text-green-500;
   }
+  
+  /* Chart styling */
+  .recharts-legend-item-text {
+    color: #FFFFFF !important;
+  }
+  
+  .recharts-cartesian-axis-tick-value {
+    fill: #FFFFFF !important;
+  }
 }

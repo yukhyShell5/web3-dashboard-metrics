@@ -46,7 +46,7 @@ const PieChart: React.FC<PieChartProps> = ({
           itemStyle={{ color: 'hsl(var(--foreground))' }}
           labelStyle={{ color: 'hsl(var(--foreground))' }}
         />
-        <Legend />
+        <Legend formatter={(value) => <span style={{ color: '#FFFFFF' }}>{value}</span>} />
       </RechartsPieChart>
     </ResponsiveContainer>
   );
