@@ -10,46 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PlusIcon, LayoutDashboardIcon, LineChartIcon, BarChart2Icon, PieChartIcon, AreaChartIcon, SearchIcon, MoveIcon, ArrowUpIcon, ArrowDownIcon, EditIcon, TrashIcon } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-
-// Mock data for dashboards
-const mockDashboards = [
-  {
-    id: '1',
-    title: 'Web3 Security Overview',
-    description: 'High-level security metrics for monitored addresses',
-    charts: 8,
-    createdAt: '2023-07-15T10:30:00Z',
-    updatedAt: '2023-08-10T14:22:00Z',
-    isPrimary: true,
-  },
-  {
-    id: '2',
-    title: 'Smart Contract Monitor',
-    description: 'Detailed analytics for smart contract interactions',
-    charts: 6,
-    createdAt: '2023-07-20T11:45:00Z',
-    updatedAt: '2023-08-09T09:15:00Z',
-    isPrimary: false,
-  },
-  {
-    id: '3',
-    title: 'Transaction Analysis',
-    description: 'Deep dive into transaction patterns and anomalies',
-    charts: 10,
-    createdAt: '2023-07-25T15:20:00Z',
-    updatedAt: '2023-08-08T16:30:00Z',
-    isPrimary: false,
-  },
-  {
-    id: '4',
-    title: 'DeFi Risk Monitor',
-    description: 'Monitor DeFi protocols and risk exposure',
-    charts: 7,
-    createdAt: '2023-08-01T09:10:00Z',
-    updatedAt: '2023-08-07T11:45:00Z',
-    isPrimary: false,
-  },
-];
+import { Dashboard, useDashboardStore } from '@/services/dashboardService';
 
 // Mock data for chart templates
 const chartTemplates = [
@@ -63,10 +24,16 @@ const chartTemplates = [
 
 const Dashboards = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [dashboards, setDashboards] = useState(mockDashboards);
+  const dashboards = useDashboardStore(state => state.dashboards);
+  const setPrimaryDashboard = useDashboardStore(state => state.setPrimaryDashboard);
   const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
   const [layoutItems, setLayoutItems] = useState<{id: string, type: string, title: string, content: React.ReactNode}[]>([]);
   const [isEditing, setIsEditing] = useState(false);
+  const [newDashboardData, setNewDashboardData] = useState({
+    title: '',
+    description: '',
+    isPrimary: false
+  });
 
   const handleAddChart = (chartId: string) => {
     if (!selectedCharts.includes(chartId)) {
@@ -94,10 +61,10 @@ const Dashboards = () => {
     if (!result.destination) return;
     
     if (result.type === 'dashboards') {
-      const items = [...dashboards];
+      const items = Array.from(dashboards);
       const [reorderedItem] = items.splice(result.source.index, 1);
       items.splice(result.destination.index, 0, reorderedItem);
-      setDashboards(items);
+      // Update dashboards order if needed
     } else if (result.type === 'layout-items') {
       const items = [...layoutItems];
       const [reorderedItem] = items.splice(result.source.index, 1);
@@ -107,17 +74,25 @@ const Dashboards = () => {
   };
 
   const handleCreateDashboard = () => {
-    // In a real app, save to backend
-    setIsEditing(false);
-  };
-
-  const setPrimaryDashboard = (id: string) => {
-    setDashboards(
-      dashboards.map(dashboard => ({
-        ...dashboard,
-        isPrimary: dashboard.id === id
+    const addDashboard = useDashboardStore.getState().addDashboard;
+    
+    addDashboard({
+      title: newDashboardData.title || 'Untitled Dashboard',
+      description: newDashboardData.description || 'No description provided',
+      charts: layoutItems.length,
+      isPrimary: newDashboardData.isPrimary,
+      layout: layoutItems.map(item => ({
+        id: item.id,
+        type: item.type as any,
+        title: item.title
       }))
-    );
+    });
+    
+    // Reset form
+    setNewDashboardData({ title: '', description: '', isPrimary: false });
+    setSelectedCharts([]);
+    setLayoutItems([]);
+    setIsEditing(false);
   };
 
   const filteredDashboards = dashboards.filter(dashboard => 
@@ -147,7 +122,7 @@ const Dashboards = () => {
               </DialogDescription>
             </DialogHeader>
 
-            <Tabs defaultValue="layout" className="w-full h-full">
+            <Tabs defaultValue="details" className="w-full h-full">
               <TabsList className="grid grid-cols-3 mb-4">
                 <TabsTrigger value="details">Dashboard Details</TabsTrigger>
                 <TabsTrigger value="charts">Add Charts</TabsTrigger>
@@ -160,13 +135,25 @@ const Dashboards = () => {
                     <Label htmlFor="name" className="text-right">
                       Name
                     </Label>
-                    <Input id="name" placeholder="Dashboard name" className="col-span-3" />
+                    <Input 
+                      id="name" 
+                      placeholder="Dashboard name" 
+                      className="col-span-3"
+                      value={newDashboardData.title}
+                      onChange={(e) => setNewDashboardData({...newDashboardData, title: e.target.value})}
+                    />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="description" className="text-right">
                       Description
                     </Label>
-                    <Input id="description" placeholder="Brief description" className="col-span-3" />
+                    <Input 
+                      id="description" 
+                      placeholder="Brief description" 
+                      className="col-span-3" 
+                      value={newDashboardData.description}
+                      onChange={(e) => setNewDashboardData({...newDashboardData, description: e.target.value})}
+                    />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="primary" className="text-right">
@@ -176,7 +163,13 @@ const Dashboards = () => {
                       <p className="text-sm text-muted-foreground">
                         If checked, this dashboard will appear on the home page.
                       </p>
-                      <input type="checkbox" id="primary" className="mt-2" />
+                      <input 
+                        type="checkbox" 
+                        id="primary" 
+                        className="mt-2"
+                        checked={newDashboardData.isPrimary}
+                        onChange={(e) => setNewDashboardData({...newDashboardData, isPrimary: e.target.checked})}
+                      />
                     </div>
                   </div>
                 </div>

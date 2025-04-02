@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { AlertCircleIcon, ActivityIcon, DatabaseIcon, EyeIcon, BarChart4Icon, ArrowUpRightIcon } from 'lucide-react';
 import ChartCard from '@/components/ChartCard';
 import StatCard from '@/components/StatCard';
