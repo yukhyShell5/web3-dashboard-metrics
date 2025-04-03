@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AlertItem, { AlertItemProps, AlertSeverity } from '@/components/AlertItem';
@@ -170,7 +171,7 @@ const Analytics = () => {
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Recent Alerts</CardTitle>
           <div className="flex items-center space-x-2">
             <div className="relative flex-1 max-w-sm">
