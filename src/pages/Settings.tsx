@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -9,42 +8,157 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusIcon, TrashIcon, CheckIcon, BellIcon, WrenchIcon, KeyIcon, ShieldIcon, GlobeIcon, SaveIcon } from 'lucide-react';
+import { PlusIcon, TrashIcon, CheckIcon, BellIcon, WrenchIcon, KeyIcon, ShieldIcon, GlobeIcon, SaveIcon, PlayIcon, StopCircleIcon, FileIcon } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
+import { addressesApi, webhooksApi } from '@/services/apiService';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-// Mock data for monitored addresses
-const mockAddresses = [
-  { id: '1', address: '0x71C7656EC7ab88b098defB751B7401B5f6d8976F', label: 'Primary Wallet', chain: 'ethereum', monitored: true },
-  { id: '2', address: '0x2546BcD3c84621e976D8185a91A922aE77ECEc30', label: 'DeFi Operations', chain: 'polygon', monitored: true },
-  { id: '3', address: '0xbDA5747bFD65F08deb54cb465eB87D40e51B197E', label: 'Treasury', chain: 'ethereum', monitored: true },
-  { id: '4', address: '0xdD2FD4581271e230360230F9337D5c0430Bf44C0', label: 'Cold Storage', chain: 'all', monitored: false },
-  { id: '5', address: '0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199', label: 'Trading Bot', chain: 'arbitrum', monitored: true },
-];
+// Type pour les adresses surveillées
+interface MonitoredAddress {
+  id: string;
+  address: string;
+  label: string;
+  chain: string;
+  monitored: boolean;
+}
 
-// Mock data for webhooks
-const mockWebhooks = [
-  { id: '1', name: 'Slack Alerts', url: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX', type: 'slack', active: true },
-  { id: '2', name: 'Discord Notifications', url: 'https://discord.com/api/webhooks/0000000000000000/XXXXXXXXXXXXXXXXXXXX', type: 'discord', active: true },
-  { id: '3', name: 'Email Alerts', url: 'mailto:alerts@example.com', type: 'email', active: false },
-];
+// Type pour les webhooks
+interface Webhook {
+  id: string;
+  name: string;
+  url: string;
+  type: string;
+  active: boolean;
+}
 
 const Settings = () => {
-  const [addresses, setAddresses] = useState(mockAddresses);
-  const [webhooks, setWebhooks] = useState(mockWebhooks);
+  const queryClient = useQueryClient();
+  const [addresses, setAddresses] = useState<MonitoredAddress[]>([]);
+  const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [newAddress, setNewAddress] = useState({ address: '', label: '', chain: 'ethereum' });
   const [newWebhook, setNewWebhook] = useState({ name: '', url: '', type: 'slack' });
+  const [isMonitoring, setIsMonitoring] = useState(false);
+
+  // Requête pour obtenir les adresses surveillées
+  const { data: watchedAddresses, isLoading: isLoadingAddresses } = useQuery({
+    queryKey: ['watchedAddresses'],
+    queryFn: addressesApi.getWatchedAddresses
+  });
+
+  // Requête pour obtenir les webhooks
+  const { data: webhookUrls, isLoading: isLoadingWebhooks } = useQuery({
+    queryKey: ['webhooks'],
+    queryFn: webhooksApi.getWebhooks
+  });
+
+  // Requête pour obtenir le statut de monitoring
+  const { data: monitoringStatus, isLoading: isLoadingMonitoring } = useQuery({
+    queryKey: ['monitoringStatus'],
+    queryFn: addressesApi.getMonitoringStatus,
+    refetchInterval: 30000 // Rafraîchir toutes les 30 secondes
+  });
+
+  // Mutation pour démarrer le monitoring
+  const startMonitoringMutation = useMutation({
+    mutationFn: addressesApi.startMonitoring,
+    onSuccess: () => {
+      setIsMonitoring(true);
+      queryClient.invalidateQueries({ queryKey: ['monitoringStatus'] });
+    }
+  });
+
+  // Mutation pour arrêter le monitoring
+  const stopMonitoringMutation = useMutation({
+    mutationFn: addressesApi.stopMonitoring,
+    onSuccess: () => {
+      setIsMonitoring(false);
+      queryClient.invalidateQueries({ queryKey: ['monitoringStatus'] });
+    }
+  });
+
+  // Mutation pour mettre à jour les adresses surveillées
+  const updateAddressesMutation = useMutation({
+    mutationFn: (addressList: string[]) => addressesApi.updateWatchedAddresses(addressList),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['watchedAddresses'] });
+    }
+  });
+
+  // Mutation pour mettre à jour les webhooks
+  const updateWebhooksMutation = useMutation({
+    mutationFn: (webhookList: string[]) => webhooksApi.updateWebhooks(webhookList),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks'] });
+    }
+  });
+
+  // Mutation pour générer un rapport
+  const generateReportMutation = useMutation({
+    mutationFn: webhooksApi.generateReport,
+    onSuccess: (data) => {
+      // Créer un URL pour le blob et initier le téléchargement
+      const url = window.URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'alert_report.pdf';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      a.remove();
+      
+      toast({
+        title: "Rapport généré",
+        description: "Le rapport d'alertes a été généré et téléchargé."
+      });
+    }
+  });
+
+  // Effet pour mettre à jour l'état local à partir des données de l'API
+  useEffect(() => {
+    if (watchedAddresses) {
+      const formattedAddresses: MonitoredAddress[] = watchedAddresses.map((address, index) => ({
+        id: `api-${index}`,
+        address,
+        label: `Adresse ${index + 1}`,
+        chain: 'ethereum',
+        monitored: true
+      }));
+      setAddresses(formattedAddresses);
+    }
+  }, [watchedAddresses]);
+
+  // Effet pour mettre à jour l'état local des webhooks à partir des données de l'API
+  useEffect(() => {
+    if (webhookUrls) {
+      const formattedWebhooks: Webhook[] = webhookUrls.map((url, index) => ({
+        id: `api-${index}`,
+        name: `Webhook ${index + 1}`,
+        url,
+        type: url.includes('discord') ? 'discord' : 'slack',
+        active: true
+      }));
+      setWebhooks(formattedWebhooks);
+    }
+  }, [webhookUrls]);
+
+  // Effet pour mettre à jour l'état du monitoring
+  useEffect(() => {
+    if (monitoringStatus !== undefined) {
+      setIsMonitoring(monitoringStatus);
+    }
+  }, [monitoringStatus]);
 
   const handleAddAddress = () => {
     if (!newAddress.address || !newAddress.label) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
+        title: "Information manquante",
+        description: "Veuillez remplir tous les champs requis.",
         variant: "destructive",
       });
       return;
     }
 
-    setAddresses([
+    const newAddressList = [
       ...addresses,
       {
         id: Date.now().toString(),
@@ -53,43 +167,55 @@ const Settings = () => {
         chain: newAddress.chain,
         monitored: true,
       },
-    ]);
-
+    ];
+    
+    setAddresses(newAddressList);
     setNewAddress({ address: '', label: '', chain: 'ethereum' });
 
+    // Mettre à jour les adresses dans l'API
+    updateAddressesMutation.mutate(newAddressList.map(addr => addr.address));
+
     toast({
-      title: "Address Added",
-      description: "The blockchain address has been added to monitoring.",
+      title: "Adresse ajoutée",
+      description: "L'adresse blockchain a été ajoutée au monitoring.",
     });
   };
 
   const handleRemoveAddress = (id: string) => {
-    setAddresses(addresses.filter((address) => address.id !== id));
+    const updatedAddresses = addresses.filter((address) => address.id !== id);
+    setAddresses(updatedAddresses);
+    
+    // Mettre à jour les adresses dans l'API
+    updateAddressesMutation.mutate(updatedAddresses.map(addr => addr.address));
+
     toast({
-      title: "Address Removed",
-      description: "The blockchain address has been removed from monitoring.",
+      title: "Adresse supprimée",
+      description: "L'adresse blockchain a été supprimée du monitoring.",
     });
   };
 
   const handleToggleAddressMonitoring = (id: string) => {
-    setAddresses(
-      addresses.map((address) =>
-        address.id === id ? { ...address, monitored: !address.monitored } : address
-      )
+    const updatedAddresses = addresses.map((address) =>
+      address.id === id ? { ...address, monitored: !address.monitored } : address
     );
+    
+    setAddresses(updatedAddresses);
+    
+    // On ne met à jour l'API que si l'adresse est complètement supprimée, 
+    // pas juste pour changer son état de monitoring local
   };
 
   const handleAddWebhook = () => {
     if (!newWebhook.name || !newWebhook.url) {
       toast({
-        title: "Missing Information",
-        description: "Please fill in all required fields.",
+        title: "Information manquante",
+        description: "Veuillez remplir tous les champs requis.",
         variant: "destructive",
       });
       return;
     }
 
-    setWebhooks([
+    const newWebhookList = [
       ...webhooks,
       {
         id: Date.now().toString(),
@@ -98,80 +224,124 @@ const Settings = () => {
         type: newWebhook.type,
         active: true,
       },
-    ]);
-
+    ];
+    
+    setWebhooks(newWebhookList);
     setNewWebhook({ name: '', url: '', type: 'slack' });
 
+    // Mettre à jour les webhooks dans l'API
+    updateWebhooksMutation.mutate(newWebhookList.map(webhook => webhook.url));
+
     toast({
-      title: "Webhook Added",
-      description: "The webhook has been added for alert notifications.",
+      title: "Webhook ajouté",
+      description: "Le webhook a été ajouté pour les notifications d'alerte.",
     });
   };
 
   const handleRemoveWebhook = (id: string) => {
-    setWebhooks(webhooks.filter((webhook) => webhook.id !== id));
+    const updatedWebhooks = webhooks.filter((webhook) => webhook.id !== id);
+    setWebhooks(updatedWebhooks);
+    
+    // Mettre à jour les webhooks dans l'API
+    updateWebhooksMutation.mutate(updatedWebhooks.map(webhook => webhook.url));
+
     toast({
-      title: "Webhook Removed",
-      description: "The webhook has been removed from notifications.",
+      title: "Webhook supprimé",
+      description: "Le webhook a été supprimé des notifications.",
     });
   };
 
   const handleToggleWebhookActive = (id: string) => {
-    setWebhooks(
-      webhooks.map((webhook) =>
-        webhook.id === id ? { ...webhook, active: !webhook.active } : webhook
-      )
+    const updatedWebhooks = webhooks.map((webhook) =>
+      webhook.id === id ? { ...webhook, active: !webhook.active } : webhook
     );
+    
+    setWebhooks(updatedWebhooks);
+    
+    // On ne met à jour l'API que si le webhook est complètement supprimé,
+    // pas juste pour changer son état d'activation local
+  };
+
+  const handleToggleMonitoring = () => {
+    if (isMonitoring) {
+      stopMonitoringMutation.mutate();
+    } else {
+      startMonitoringMutation.mutate();
+    }
+  };
+
+  const handleGenerateReport = () => {
+    generateReportMutation.mutate();
   };
 
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-muted-foreground">Configure your Web3 SOC monitoring</p>
+          <h1 className="text-3xl font-bold">Paramètres</h1>
+          <p className="text-muted-foreground">Configurez votre monitoring SOC Web3</p>
         </div>
-        <Button className="flex items-center gap-2" variant="outline" onClick={() => {
-          toast({
-            title: "Settings Saved",
-            description: "Your configuration has been updated successfully.",
-          });
-        }}>
-          <SaveIcon className="h-4 w-4" />
-          Save All Changes
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            className="flex items-center gap-2" 
+            variant={isMonitoring ? "destructive" : "default"}
+            onClick={handleToggleMonitoring}
+            disabled={startMonitoringMutation.isPending || stopMonitoringMutation.isPending}
+          >
+            {isMonitoring ? (
+              <>
+                <StopCircleIcon className="h-4 w-4" />
+                Arrêter le monitoring
+              </>
+            ) : (
+              <>
+                <PlayIcon className="h-4 w-4" />
+                Démarrer le monitoring
+              </>
+            )}
+          </Button>
+          <Button 
+            className="flex items-center gap-2" 
+            variant="outline" 
+            onClick={handleGenerateReport}
+            disabled={generateReportMutation.isPending}
+          >
+            <FileIcon className="h-4 w-4" />
+            Générer un rapport
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="addresses" className="w-full">
         <TabsList className="grid grid-cols-4 w-full md:w-auto">
           <TabsTrigger value="addresses" className="flex gap-2 items-center">
             <ShieldIcon className="h-4 w-4" />
-            <span className="hidden sm:inline">Monitored Addresses</span>
-            <span className="inline sm:hidden">Addresses</span>
+            <span className="hidden sm:inline">Adresses surveillées</span>
+            <span className="inline sm:hidden">Adresses</span>
           </TabsTrigger>
           <TabsTrigger value="notifications" className="flex gap-2 items-center">
             <BellIcon className="h-4 w-4" />
             <span className="hidden sm:inline">Notifications</span>
-            <span className="inline sm:hidden">Alerts</span>
+            <span className="inline sm:hidden">Alertes</span>
           </TabsTrigger>
           <TabsTrigger value="api" className="flex gap-2 items-center">
             <KeyIcon className="h-4 w-4" />
-            <span className="hidden sm:inline">API & Integrations</span>
+            <span className="hidden sm:inline">API & Intégrations</span>
             <span className="inline sm:hidden">API</span>
           </TabsTrigger>
           <TabsTrigger value="general" className="flex gap-2 items-center">
             <WrenchIcon className="h-4 w-4" />
-            <span className="hidden sm:inline">General Settings</span>
-            <span className="inline sm:hidden">General</span>
+            <span className="hidden sm:inline">Paramètres généraux</span>
+            <span className="inline sm:hidden">Général</span>
           </TabsTrigger>
         </TabsList>
 
         <TabsContent value="addresses" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Monitored Blockchain Addresses</CardTitle>
+              <CardTitle>Adresses blockchain surveillées</CardTitle>
               <CardDescription>
-                Add, edit, and manage addresses for security monitoring
+                Ajoutez, modifiez et gérez les adresses pour la surveillance de sécurité
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -179,20 +349,20 @@ const Settings = () => {
                 <DialogTrigger asChild>
                   <Button className="w-full">
                     <PlusIcon className="h-4 w-4 mr-2" />
-                    Add New Address
+                    Ajouter une nouvelle adresse
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Add Blockchain Address</DialogTitle>
+                    <DialogTitle>Ajouter une adresse blockchain</DialogTitle>
                     <DialogDescription>
-                      Add a new address to monitor for security events
+                      Ajoutez une nouvelle adresse à surveiller pour les événements de sécurité
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="address" className="text-right">
-                        Address
+                        Adresse
                       </Label>
                       <Input
                         id="address"
@@ -204,11 +374,11 @@ const Settings = () => {
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="label" className="text-right">
-                        Label
+                        Libellé
                       </Label>
                       <Input
                         id="label"
-                        placeholder="My Wallet"
+                        placeholder="Mon portefeuille"
                         className="col-span-3"
                         value={newAddress.label}
                         onChange={(e) => setNewAddress({ ...newAddress, label: e.target.value })}
@@ -223,10 +393,10 @@ const Settings = () => {
                         onValueChange={(value) => setNewAddress({ ...newAddress, chain: value })}
                       >
                         <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select blockchain" />
+                          <SelectValue placeholder="Sélectionner une blockchain" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All Chains</SelectItem>
+                          <SelectItem value="all">Toutes les chaînes</SelectItem>
                           <SelectItem value="ethereum">Ethereum</SelectItem>
                           <SelectItem value="polygon">Polygon</SelectItem>
                           <SelectItem value="arbitrum">Arbitrum</SelectItem>
@@ -237,56 +407,72 @@ const Settings = () => {
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button onClick={handleAddAddress}>Add Address</Button>
+                    <Button 
+                      onClick={handleAddAddress}
+                      disabled={updateAddressesMutation.isPending}
+                    >
+                      {updateAddressesMutation.isPending ? "Ajout en cours..." : "Ajouter l'adresse"}
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
 
-              <div className="space-y-4 mt-4">
-                {addresses.map((address) => (
-                  <div
-                    key={address.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg bg-card"
-                  >
-                    <div className="space-y-1 mb-2 sm:mb-0">
-                      <div className="font-medium flex flex-wrap gap-2 items-center">
-                        {address.label}
-                        <Badge
-                          variant="outline"
-                          className={address.monitored ? "bg-green-500/10 text-green-500" : "bg-gray-500/10 text-gray-500"}
-                        >
-                          {address.monitored ? "Monitoring" : "Paused"}
-                        </Badge>
+              {isLoadingAddresses ? (
+                <div className="py-10 text-center text-muted-foreground">
+                  Chargement des adresses...
+                </div>
+              ) : addresses.length > 0 ? (
+                <div className="space-y-4 mt-4">
+                  {addresses.map((address) => (
+                    <div
+                      key={address.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg bg-card"
+                    >
+                      <div className="space-y-1 mb-2 sm:mb-0">
+                        <div className="font-medium flex flex-wrap gap-2 items-center">
+                          {address.label}
+                          <Badge
+                            variant="outline"
+                            className={address.monitored ? "bg-green-500/10 text-green-500" : "bg-gray-500/10 text-gray-500"}
+                          >
+                            {address.monitored ? "Surveillance active" : "En pause"}
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-muted-foreground font-mono">{address.address}</div>
+                        <div className="text-xs">
+                          <Badge variant="outline" className="mr-1">
+                            {address.chain === 'all' ? 'Toutes les chaînes' : address.chain}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="text-sm text-muted-foreground font-mono">{address.address}</div>
-                      <div className="text-xs">
-                        <Badge variant="outline" className="mr-1">
-                          {address.chain === 'all' ? 'All Chains' : address.chain}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
                       <div className="flex items-center space-x-2">
-                        <Switch
-                          id={`address-toggle-${address.id}`}
-                          checked={address.monitored}
-                          onCheckedChange={() => handleToggleAddressMonitoring(address.id)}
-                        />
-                        <Label htmlFor={`address-toggle-${address.id}`} className="text-sm">
-                          {address.monitored ? "On" : "Off"}
-                        </Label>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id={`address-toggle-${address.id}`}
+                            checked={address.monitored}
+                            onCheckedChange={() => handleToggleAddressMonitoring(address.id)}
+                          />
+                          <Label htmlFor={`address-toggle-${address.id}`} className="text-sm">
+                            {address.monitored ? "Activé" : "Désactivé"}
+                          </Label>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveAddress(address.id)}
+                          disabled={updateAddressesMutation.isPending}
+                        >
+                          <TrashIcon className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveAddress(address.id)}
-                      >
-                        <TrashIcon className="h-4 w-4 text-destructive" />
-                      </Button>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-10 text-center text-muted-foreground">
+                  Aucune adresse surveillée. Ajoutez-en une pour commencer.
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -294,9 +480,9 @@ const Settings = () => {
         <TabsContent value="notifications" className="space-y-4 mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Alert Webhooks & Notifications</CardTitle>
+              <CardTitle>Webhooks & Notifications d'alerte</CardTitle>
               <CardDescription>
-                Configure integration endpoints to receive security alerts
+                Configurez les points d'intégration pour recevoir les alertes de sécurité
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -304,24 +490,24 @@ const Settings = () => {
                 <DialogTrigger asChild>
                   <Button className="w-full">
                     <PlusIcon className="h-4 w-4 mr-2" />
-                    Add New Webhook
+                    Ajouter un nouveau webhook
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Add Notification Webhook</DialogTitle>
+                    <DialogTitle>Ajouter un webhook de notification</DialogTitle>
                     <DialogDescription>
-                      Add a webhook to receive alert notifications
+                      Ajoutez un webhook pour recevoir les notifications d'alerte
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
                     <div className="grid grid-cols-4 items-center gap-4">
                       <Label htmlFor="webhook-name" className="text-right">
-                        Name
+                        Nom
                       </Label>
                       <Input
                         id="webhook-name"
-                        placeholder="Slack Alerts"
+                        placeholder="Alertes Slack"
                         className="col-span-3"
                         value={newWebhook.name}
                         onChange={(e) => setNewWebhook({ ...newWebhook, name: e.target.value })}
@@ -348,121 +534,137 @@ const Settings = () => {
                         onValueChange={(value) => setNewWebhook({ ...newWebhook, type: value })}
                       >
                         <SelectTrigger className="col-span-3">
-                          <SelectValue placeholder="Select webhook type" />
+                          <SelectValue placeholder="Sélectionner un type de webhook" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="slack">Slack</SelectItem>
                           <SelectItem value="discord">Discord</SelectItem>
                           <SelectItem value="telegram">Telegram</SelectItem>
                           <SelectItem value="email">Email</SelectItem>
-                          <SelectItem value="custom">Custom HTTP</SelectItem>
+                          <SelectItem value="custom">HTTP personnalisé</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button onClick={handleAddWebhook}>Add Webhook</Button>
+                    <Button 
+                      onClick={handleAddWebhook}
+                      disabled={updateWebhooksMutation.isPending}
+                    >
+                      {updateWebhooksMutation.isPending ? "Ajout en cours..." : "Ajouter le webhook"}
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
 
-              <div className="space-y-4 mt-4">
-                {webhooks.map((webhook) => (
-                  <div
-                    key={webhook.id}
-                    className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg bg-card"
-                  >
-                    <div className="space-y-1 mb-2 sm:mb-0">
-                      <div className="font-medium flex flex-wrap gap-2 items-center">
-                        {webhook.name}
-                        <Badge
-                          variant="outline"
-                          className={webhook.active ? "bg-green-500/10 text-green-500" : "bg-gray-500/10 text-gray-500"}
-                        >
-                          {webhook.active ? "Active" : "Inactive"}
-                        </Badge>
+              {isLoadingWebhooks ? (
+                <div className="py-10 text-center text-muted-foreground">
+                  Chargement des webhooks...
+                </div>
+              ) : webhooks.length > 0 ? (
+                <div className="space-y-4 mt-4">
+                  {webhooks.map((webhook) => (
+                    <div
+                      key={webhook.id}
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg bg-card"
+                    >
+                      <div className="space-y-1 mb-2 sm:mb-0">
+                        <div className="font-medium flex flex-wrap gap-2 items-center">
+                          {webhook.name}
+                          <Badge
+                            variant="outline"
+                            className={webhook.active ? "bg-green-500/10 text-green-500" : "bg-gray-500/10 text-gray-500"}
+                          >
+                            {webhook.active ? "Actif" : "Inactif"}
+                          </Badge>
+                        </div>
+                        <div className="text-sm text-muted-foreground truncate max-w-md">{webhook.url}</div>
+                        <div className="text-xs">
+                          <Badge variant="outline" className="capitalize">
+                            {webhook.type}
+                          </Badge>
+                        </div>
                       </div>
-                      <div className="text-sm text-muted-foreground truncate max-w-md">{webhook.url}</div>
-                      <div className="text-xs">
-                        <Badge variant="outline" className="capitalize">
-                          {webhook.type}
-                        </Badge>
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
                       <div className="flex items-center space-x-2">
-                        <Switch
-                          id={`webhook-toggle-${webhook.id}`}
-                          checked={webhook.active}
-                          onCheckedChange={() => handleToggleWebhookActive(webhook.id)}
-                        />
-                        <Label htmlFor={`webhook-toggle-${webhook.id}`} className="text-sm">
-                          {webhook.active ? "On" : "Off"}
-                        </Label>
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            id={`webhook-toggle-${webhook.id}`}
+                            checked={webhook.active}
+                            onCheckedChange={() => handleToggleWebhookActive(webhook.id)}
+                          />
+                          <Label htmlFor={`webhook-toggle-${webhook.id}`} className="text-sm">
+                            {webhook.active ? "Activé" : "Désactivé"}
+                          </Label>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => {
+                          toast({
+                            title: "Test envoyé",
+                            description: "Une notification test a été envoyée au webhook.",
+                          });
+                        }}>
+                          Test
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleRemoveWebhook(webhook.id)}
+                          disabled={updateWebhooksMutation.isPending}
+                        >
+                          <TrashIcon className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
-                      <Button variant="outline" size="sm" onClick={() => {
-                        toast({
-                          title: "Test Sent",
-                          description: "A test notification has been sent to the webhook.",
-                        });
-                      }}>
-                        Test
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => handleRemoveWebhook(webhook.id)}
-                      >
-                        <TrashIcon className="h-4 w-4 text-destructive" />
-                      </Button>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-10 text-center text-muted-foreground">
+                  Aucun webhook configuré. Ajoutez-en un pour recevoir des notifications.
+                </div>
+              )}
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Alert Rules & Notifications</CardTitle>
+              <CardTitle>Règles d'alerte et notifications</CardTitle>
               <CardDescription>
-                Configure which types of alerts trigger notifications
+                Configurez quels types d'alertes déclenchent des notifications
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-red-500/20 text-red-500">critical</Badge>
-                    <span>Critical Alerts</span>
+                    <Badge className="bg-red-500/20 text-red-500">critique</Badge>
+                    <span>Alertes critiques</span>
                   </div>
                   <Switch defaultChecked />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-orange-500/20 text-orange-500">high</Badge>
-                    <span>High Severity Alerts</span>
+                    <Badge className="bg-orange-500/20 text-orange-500">haute</Badge>
+                    <span>Alertes haute sévérité</span>
                   </div>
                   <Switch defaultChecked />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-yellow-500/20 text-yellow-500">medium</Badge>
-                    <span>Medium Severity Alerts</span>
+                    <Badge className="bg-yellow-500/20 text-yellow-500">moyenne</Badge>
+                    <span>Alertes moyenne sévérité</span>
                   </div>
                   <Switch defaultChecked />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Badge className="bg-blue-500/20 text-blue-500">low</Badge>
-                    <span>Low Severity Alerts</span>
+                    <Badge className="bg-blue-500/20 text-blue-500">basse</Badge>
+                    <span>Alertes basse sévérité</span>
                   </div>
                   <Switch />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Badge className="bg-green-500/20 text-green-500">info</Badge>
-                    <span>Informational Alerts</span>
+                    <span>Alertes informatives</span>
                   </div>
                   <Switch />
                 </div>
@@ -682,49 +884,4 @@ const Settings = () => {
                     <SelectItem value="60">60 days</SelectItem>
                     <SelectItem value="90">90 days</SelectItem>
                     <SelectItem value="180">180 days</SelectItem>
-                    <SelectItem value="365">1 year</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="tx-retention" className="text-right">
-                  Transaction Data
-                </Label>
-                <Select defaultValue="30">
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select retention period" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="7">7 days</SelectItem>
-                    <SelectItem value="14">14 days</SelectItem>
-                    <SelectItem value="30">30 days</SelectItem>
-                    <SelectItem value="90">90 days</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="logs-retention" className="text-right">
-                  System Logs
-                </Label>
-                <Select defaultValue="14">
-                  <SelectTrigger className="col-span-3">
-                    <SelectValue placeholder="Select retention period" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="7">7 days</SelectItem>
-                    <SelectItem value="14">14 days</SelectItem>
-                    <SelectItem value="30">30 days</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
-  );
-};
-
-export default Settings;
+                    <SelectItem value="3
