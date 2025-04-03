@@ -151,9 +151,9 @@ const Analytics = () => {
         </CardContent>
       </Card>
 
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Recent Alerts</h2>
+      <Card>
+        <CardHeader className="flex items-center justify-between">
+          <CardTitle>Recent Alerts</CardTitle>
           <div className="flex items-center gap-2">
             <div className="relative">
               <SearchIcon className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
@@ -181,20 +181,21 @@ const Analytics = () => {
               <FilterIcon className="h-4 w-4" />
             </Button>
           </div>
-        </div>
-
-        <div className="space-y-2">
-          {filteredAlerts.length > 0 ? (
-            filteredAlerts.map((alert) => (
-              <AlertItem key={alert.id} {...alert} />
-            ))
-          ) : (
-            <div className="text-center py-10 text-muted-foreground">
-              No alerts match your filters
-            </div>
-          )}
-        </div>
-      </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {filteredAlerts.length > 0 ? (
+              filteredAlerts.map((alert) => (
+                <AlertItem key={alert.id} {...alert} />
+              ))
+            ) : (
+              <div className="text-center py-10 text-muted-foreground">
+                No alerts match your filters
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
