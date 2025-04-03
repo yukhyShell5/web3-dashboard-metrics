@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import AlertItem, { AlertItemProps, AlertSeverity } from '@/components/AlertItem';
@@ -8,6 +7,10 @@ import { Button } from '@/components/ui/button';
 import { SearchIcon, FilterIcon, BellRingIcon } from 'lucide-react';
 import LineChart from '@/components/charts/LineChart';
 import PieChart from '@/components/charts/PieChart';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+import { MoreVerticalIcon } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 // Mock alerts data
 const mockAlerts: AlertItemProps[] = [
@@ -79,6 +82,23 @@ const Analytics = () => {
     { name: 'Low', value: 18 },
     { name: 'Info', value: 10 },
   ];
+
+  const getSeverityBadge = (severity: AlertSeverity) => {
+    switch (severity) {
+      case 'critical':
+        return <Badge variant="outline" className="alert-badge-critical">Critical</Badge>;
+      case 'high':
+        return <Badge variant="outline" className="alert-badge-high">High</Badge>;
+      case 'medium':
+        return <Badge variant="outline" className="alert-badge-medium">Medium</Badge>;
+      case 'low':
+        return <Badge variant="outline" className="alert-badge-low">Low</Badge>;
+      case 'info':
+        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Info</Badge>;
+      default:
+        return <Badge variant="outline">Unknown</Badge>;
+    }
+  };
 
   return (
     <div className="space-y-8">
@@ -152,21 +172,26 @@ const Analytics = () => {
       </Card>
 
       <Card>
-        <CardHeader className="flex items-center justify-between">
+        <CardHeader className="pb-3">
           <CardTitle>Recent Alerts</CardTitle>
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <SearchIcon className="h-4 w-4 absolute left-3 top-3 text-muted-foreground" />
-              <Input 
-                placeholder="Search alerts..." 
-                className="pl-10 w-60"
+          <CardDescription>
+            Recent security alerts detected on monitored addresses
+          </CardDescription>
+        </CardHeader>
+        <CardHeader className="pb-0 pt-0">
+          <div className="flex items-center space-x-2">
+            <div className="relative flex-1 max-w-sm">
+              <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search alerts..."
+                className="pl-8"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <Select value={selectedSeverity} onValueChange={setSelectedSeverity}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Filter by severity" />
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="All severities" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Severities</SelectItem>
@@ -183,17 +208,59 @@ const Analytics = () => {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-2">
-            {filteredAlerts.length > 0 ? (
-              filteredAlerts.map((alert) => (
-                <AlertItem key={alert.id} {...alert} />
-              ))
-            ) : (
-              <div className="text-center py-10 text-muted-foreground">
-                No alerts match your filters
-              </div>
-            )}
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Alert</TableHead>
+                <TableHead>Source</TableHead>
+                <TableHead>Severity</TableHead>
+                <TableHead>Time</TableHead>
+                <TableHead></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredAlerts.length > 0 ? (
+                filteredAlerts.map((alert) => (
+                  <TableRow key={alert.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{alert.title}</div>
+                        <div className="text-xs text-muted-foreground">{alert.description}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{alert.source}</Badge>
+                    </TableCell>
+                    <TableCell>{getSeverityBadge(alert.severity)}</TableCell>
+                    <TableCell className="text-muted-foreground text-sm">
+                      {new Date(alert.timestamp).toLocaleString()}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVerticalIcon className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem>View details</DropdownMenuItem>
+                          <DropdownMenuItem>Mark as resolved</DropdownMenuItem>
+                          <DropdownMenuItem>Create rule</DropdownMenuItem>
+                          <DropdownMenuItem className="text-destructive">Ignore</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                    No alerts match your filters
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
