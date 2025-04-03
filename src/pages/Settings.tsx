@@ -884,4 +884,32 @@ const Settings = () => {
                     <SelectItem value="60">60 days</SelectItem>
                     <SelectItem value="90">90 days</SelectItem>
                     <SelectItem value="180">180 days</SelectItem>
-                    <SelectItem value="3
+                    <SelectItem value="365">1 year</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="logs-retention" className="text-right">
+                  System Logs
+                </Label>
+                <Select defaultValue="14">
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Select retention period" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="7">7 days</SelectItem>
+                    <SelectItem value="14">14 days</SelectItem>
+                    <SelectItem value="30">30 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+};
+
+export default Settings;
