@@ -9,8 +9,6 @@ import LineChart from '@/components/charts/LineChart';
 import PieChart from '@/components/charts/PieChart';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { MoreVerticalIcon } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 // Mock alerts data
 const mockAlerts: AlertItemProps[] = [
@@ -172,13 +170,8 @@ const Analytics = () => {
       </Card>
 
       <Card>
-        <CardHeader className="pb-3">
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle>Recent Alerts</CardTitle>
-          <CardDescription>
-            Recent security alerts detected on monitored addresses
-          </CardDescription>
-        </CardHeader>
-        <CardHeader className="pb-0 pt-0">
           <div className="flex items-center space-x-2">
             <div className="relative flex-1 max-w-sm">
               <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -207,6 +200,9 @@ const Analytics = () => {
             </Button>
           </div>
         </CardHeader>
+        <CardDescription className="px-6">
+          Recent security alerts detected on monitored addresses
+        </CardDescription>
         <CardContent>
           <Table>
             <TableHeader>
@@ -236,19 +232,9 @@ const Analytics = () => {
                       {new Date(alert.timestamp).toLocaleString()}
                     </TableCell>
                     <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVerticalIcon className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View details</DropdownMenuItem>
-                          <DropdownMenuItem>Mark as resolved</DropdownMenuItem>
-                          <DropdownMenuItem>Create rule</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">Ignore</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Button variant="ghost" size="sm">
+                        View details
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
