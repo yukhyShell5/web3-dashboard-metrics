@@ -22,46 +22,50 @@ async function handleApiError(response: Response) {
   throw new Error(errorMessage);
 }
 
+// Types pour les adresses surveillées et webhooks
 export interface MonitoredAddress {
+  id: number;
   address: string;
-  label: string;
-  chain: string;
-  monitored: boolean;
+  name: string;
+  blockchain: string;
+  actif: boolean;
 }
 
 export interface Webhook {
+  id: number;
   name: string;
   url: string;
   type: string;
-  active: boolean;
+  actif: boolean;
 }
 
 // API pour les adresses surveillées
 export const addressesApi = {
-  getWatchedAddresses: async (): Promise<string[]> => {
+  // Récupérer toutes les adresses surveillées
+  getWatchedAddresses: async (): Promise<MonitoredAddress[]> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/settings/watched_address`);
+      const response = await fetch(`${API_BASE_URL}/watched-addresses/`);
       
       if (!response.ok) {
         await handleApiError(response);
       }
       
-      const data = await response.json();
-      return data.watched_addresses || [];
+      return await response.json();
     } catch (error) {
       console.error("Erreur lors de la récupération des adresses surveillées:", error);
       return [];
     }
   },
   
-  updateWatchedAddresses: async (addresses: string[]): Promise<void> => {
+  // Ajouter une nouvelle adresse
+  addWatchedAddress: async (address: Omit<MonitoredAddress, 'id'>): Promise<MonitoredAddress> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/settings/watched_address`, {
+      const response = await fetch(`${API_BASE_URL}/watched-addresses/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ watched_addresses: addresses }),
+        body: JSON.stringify(address),
       });
       
       if (!response.ok) {
@@ -69,11 +73,61 @@ export const addressesApi = {
       }
       
       toast({
-        title: "Adresses mises à jour",
-        description: "Les adresses surveillées ont été mises à jour avec succès."
+        title: "Adresse ajoutée",
+        description: "L'adresse blockchain a été ajoutée au monitoring."
+      });
+      
+      return await response.json();
+    } catch (error) {
+      console.error("Erreur lors de l'ajout d'une adresse:", error);
+      throw error;
+    }
+  },
+  
+  // Mettre à jour une adresse
+  updateWatchedAddress: async (id: number, address: Partial<MonitoredAddress>): Promise<MonitoredAddress> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/watched-addresses/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(address),
+      });
+      
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+      
+      toast({
+        title: "Adresse mise à jour",
+        description: "L'adresse blockchain a été mise à jour."
+      });
+      
+      return await response.json();
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour d'une adresse:", error);
+      throw error;
+    }
+  },
+  
+  // Supprimer une adresse
+  deleteWatchedAddress: async (id: number): Promise<void> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/watched-addresses/${id}`, {
+        method: "DELETE",
+      });
+      
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+      
+      toast({
+        title: "Adresse supprimée",
+        description: "L'adresse blockchain a été supprimée du monitoring."
       });
     } catch (error) {
-      console.error("Erreur lors de la mise à jour des adresses surveillées:", error);
+      console.error("Erreur lors de la suppression d'une adresse:", error);
       throw error;
     }
   },
@@ -137,30 +191,31 @@ export const addressesApi = {
 
 // API pour les webhooks
 export const webhooksApi = {
-  getWebhooks: async (): Promise<string[]> => {
+  // Récupérer tous les webhooks
+  getWebhooks: async (): Promise<Webhook[]> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/settings/webhook`);
+      const response = await fetch(`${API_BASE_URL}/webhooks/`);
       
       if (!response.ok) {
         await handleApiError(response);
       }
       
-      const data = await response.json();
-      return data.webhook_urls || [];
+      return await response.json();
     } catch (error) {
       console.error("Erreur lors de la récupération des webhooks:", error);
       return [];
     }
   },
   
-  updateWebhooks: async (webhooks: string[]): Promise<void> => {
+  // Ajouter un nouveau webhook
+  addWebhook: async (webhook: Omit<Webhook, 'id'>): Promise<Webhook> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/settings/webhook`, {
+      const response = await fetch(`${API_BASE_URL}/webhooks/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ webhook_urls: webhooks }),
+        body: JSON.stringify(webhook),
       });
       
       if (!response.ok) {
@@ -168,11 +223,61 @@ export const webhooksApi = {
       }
       
       toast({
-        title: "Webhooks mis à jour",
-        description: "Les webhooks ont été mis à jour avec succès."
+        title: "Webhook ajouté",
+        description: "Le webhook a été ajouté pour les notifications d'alerte."
+      });
+      
+      return await response.json();
+    } catch (error) {
+      console.error("Erreur lors de l'ajout d'un webhook:", error);
+      throw error;
+    }
+  },
+  
+  // Mettre à jour un webhook
+  updateWebhook: async (id: number, webhook: Partial<Webhook>): Promise<Webhook> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/webhooks/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(webhook),
+      });
+      
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+      
+      toast({
+        title: "Webhook mis à jour",
+        description: "Le webhook a été mis à jour."
+      });
+      
+      return await response.json();
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour d'un webhook:", error);
+      throw error;
+    }
+  },
+  
+  // Supprimer un webhook
+  deleteWebhook: async (id: number): Promise<void> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/webhooks/${id}`, {
+        method: "DELETE",
+      });
+      
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+      
+      toast({
+        title: "Webhook supprimé",
+        description: "Le webhook a été supprimé des notifications."
       });
     } catch (error) {
-      console.error("Erreur lors de la mise à jour des webhooks:", error);
+      console.error("Erreur lors de la suppression d'un webhook:", error);
       throw error;
     }
   },
