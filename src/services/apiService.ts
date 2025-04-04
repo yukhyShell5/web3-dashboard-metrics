@@ -1,7 +1,7 @@
 
 import { toast } from "@/components/ui/use-toast";
 
-// Remplacez cette URL par l'URL réelle de votre API Python
+// API base URL
 const API_BASE_URL = "http://localhost:8000";
 
 async function handleApiError(response: Response) {
@@ -22,46 +22,131 @@ async function handleApiError(response: Response) {
   throw new Error(errorMessage);
 }
 
-export interface MonitoredAddress {
+// Types définies selon le backend
+export interface WatchedAddress {
+  id: number;
   address: string;
-  label: string;
-  chain: string;
-  monitored: boolean;
+  name: string;
+  blockchain: string;
+  is_active: boolean;
+  created_at: string;
+  notes?: string;
+}
+
+export interface WatchedAddressCreate {
+  address: string;
+  name: string;
+  blockchain: string;
+  notes?: string;
 }
 
 export interface Webhook {
-  name: string;
+  id: number;
   url: string;
+  name: string;
   type: string;
-  active: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface WebhookCreate {
+  url: string;
+  name: string;
+  type: string;
+}
+
+export interface Alert {
+  id: number;
+  alert_type: string;
+  tx_hash: string;
+  address: string;
+  value: number;
+  block: number;
+  reason: string;
+  timestamp: string;
+  details?: Record<string, any>;
 }
 
 // API pour les adresses surveillées
 export const addressesApi = {
-  getWatchedAddresses: async (): Promise<string[]> => {
+  getWatchedAddresses: async (): Promise<WatchedAddress[]> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/settings/watched_address`);
+      const response = await fetch(`${API_BASE_URL}/watched-addresses/`);
       
       if (!response.ok) {
         await handleApiError(response);
       }
       
-      const data = await response.json();
-      return data.watched_addresses || [];
+      return await response.json();
     } catch (error) {
       console.error("Erreur lors de la récupération des adresses surveillées:", error);
       return [];
     }
   },
   
-  updateWatchedAddresses: async (addresses: string[]): Promise<void> => {
+  createWatchedAddress: async (address: WatchedAddressCreate): Promise<WatchedAddress> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/settings/watched_address`, {
+      // Ensure blockchain is lowercase to match FastAPI enum validation
+      const normalizedAddress = {
+        ...address,
+        blockchain: address.blockchain.toLowerCase()
+      };
+
+      const response = await fetch(`${API_BASE_URL}/watched-addresses/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ watched_addresses: addresses }),
+        body: JSON.stringify(normalizedAddress),
+      });
+      
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+      
+      const data = await response.json();
+      toast({
+        title: "Adresse ajoutée",
+        description: "L'adresse a été ajoutée avec succès à la surveillance."
+      });
+      return data;
+    } catch (error) {
+      console.error("Erreur lors de l'ajout d'une adresse surveillée:", error);
+      throw error;
+    }
+  },
+  
+  toggleWatchedAddress: async (id: number, isActive: boolean): Promise<WatchedAddress> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/watched-addresses/${id}/toggle`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ is_active: isActive }),
+      });
+      
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+      
+      const data = await response.json();
+      toast({
+        title: isActive ? "Adresse activée" : "Adresse désactivée",
+        description: `L'adresse a été ${isActive ? "activée" : "désactivée"} avec succès.`
+      });
+      return data;
+    } catch (error) {
+      console.error("Erreur lors de la modification du statut d'une adresse:", error);
+      throw error;
+    }
+  },
+  
+  deleteWatchedAddress: async (id: number): Promise<void> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/watched-addresses/${id}`, {
+        method: "DELETE",
       });
       
       if (!response.ok) {
@@ -69,11 +154,11 @@ export const addressesApi = {
       }
       
       toast({
-        title: "Adresses mises à jour",
-        description: "Les adresses surveillées ont été mises à jour avec succès."
+        title: "Adresse supprimée",
+        description: "L'adresse a été supprimée avec succès de la surveillance."
       });
     } catch (error) {
-      console.error("Erreur lors de la mise à jour des adresses surveillées:", error);
+      console.error("Erreur lors de la suppression d'une adresse surveillée:", error);
       throw error;
     }
   },
@@ -137,30 +222,77 @@ export const addressesApi = {
 
 // API pour les webhooks
 export const webhooksApi = {
-  getWebhooks: async (): Promise<string[]> => {
+  getWebhooks: async (): Promise<Webhook[]> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/settings/webhook`);
+      const response = await fetch(`${API_BASE_URL}/webhooks/`);
       
       if (!response.ok) {
         await handleApiError(response);
       }
       
-      const data = await response.json();
-      return data.webhook_urls || [];
+      return await response.json();
     } catch (error) {
       console.error("Erreur lors de la récupération des webhooks:", error);
       return [];
     }
   },
   
-  updateWebhooks: async (webhooks: string[]): Promise<void> => {
+  createWebhook: async (webhook: WebhookCreate): Promise<Webhook> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/settings/webhook`, {
+      const response = await fetch(`${API_BASE_URL}/webhooks/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ webhook_urls: webhooks }),
+        body: JSON.stringify(webhook),
+      });
+      
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+      
+      const data = await response.json();
+      toast({
+        title: "Webhook ajouté",
+        description: "Le webhook a été ajouté avec succès."
+      });
+      return data;
+    } catch (error) {
+      console.error("Erreur lors de l'ajout d'un webhook:", error);
+      throw error;
+    }
+  },
+  
+  toggleWebhook: async (id: number, isActive: boolean): Promise<Webhook> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/webhooks/${id}/toggle`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ is_active: isActive }),
+      });
+      
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+      
+      const data = await response.json();
+      toast({
+        title: isActive ? "Webhook activé" : "Webhook désactivé",
+        description: `Le webhook a été ${isActive ? "activé" : "désactivé"} avec succès.`
+      });
+      return data;
+    } catch (error) {
+      console.error("Erreur lors de la modification du statut d'un webhook:", error);
+      throw error;
+    }
+  },
+  
+  deleteWebhook: async (id: number): Promise<void> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/webhooks/${id}`, {
+        method: "DELETE",
       });
       
       if (!response.ok) {
@@ -168,11 +300,11 @@ export const webhooksApi = {
       }
       
       toast({
-        title: "Webhooks mis à jour",
-        description: "Les webhooks ont été mis à jour avec succès."
+        title: "Webhook supprimé",
+        description: "Le webhook a été supprimé avec succès."
       });
     } catch (error) {
-      console.error("Erreur lors de la mise à jour des webhooks:", error);
+      console.error("Erreur lors de la suppression d'un webhook:", error);
       throw error;
     }
   },
@@ -194,16 +326,15 @@ export const webhooksApi = {
     }
   },
   
-  getAlerts: async (): Promise<any[]> => {
+  getAlerts: async (): Promise<Alert[]> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/alerts`);
+      const response = await fetch(`${API_BASE_URL}/alerts/`);
       
       if (!response.ok) {
         await handleApiError(response);
       }
       
-      const data = await response.json();
-      return data || [];
+      return await response.json();
     } catch (error) {
       console.error("Erreur lors de la récupération des alertes:", error);
       return [];
