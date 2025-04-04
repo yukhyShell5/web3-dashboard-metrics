@@ -1,10 +1,9 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { addressesApi, webhooksApi } from '@/services/apiService';
 import { PlayIcon, StopCircleIcon, FileIcon } from 'lucide-react';
-import { toast } from '@/components/ui/use-toast';
 
 interface MonitoringHeaderProps {
   isMonitoring: boolean;
@@ -18,10 +17,6 @@ const MonitoringHeader: React.FC<MonitoringHeaderProps> = ({ isMonitoring }) => 
     mutationFn: addressesApi.startMonitoring,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monitoringStatus'] });
-      toast({
-        title: "Monitoring démarré",
-        description: "Le monitoring des adresses a été démarré avec succès."
-      });
     }
   });
 
@@ -30,10 +25,6 @@ const MonitoringHeader: React.FC<MonitoringHeaderProps> = ({ isMonitoring }) => 
     mutationFn: addressesApi.stopMonitoring,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['monitoringStatus'] });
-      toast({
-        title: "Monitoring arrêté",
-        description: "Le monitoring des adresses a été arrêté avec succès."
-      });
     }
   });
 
@@ -50,11 +41,6 @@ const MonitoringHeader: React.FC<MonitoringHeaderProps> = ({ isMonitoring }) => 
       a.click();
       window.URL.revokeObjectURL(url);
       a.remove();
-      
-      toast({
-        title: "Rapport généré",
-        description: "Le rapport d'alertes a été généré et téléchargé avec succès."
-      });
     }
   });
 
