@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -92,7 +93,7 @@ const AddressesTab = () => {
     addAddressMutation.mutate({
       address: values.address,
       name: values.name,
-      blockchain: values.blockchain,
+      blockchain: values.blockchain.toLowerCase(), // Ensure lowercase
       actif: true,
     });
   };
