@@ -11,108 +11,105 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusIcon, TrashIcon } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { webhooksApi, Webhook } from '@/services/apiService';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
+import { webhooksApi } from '@/services/apiService';
 
-// Schéma de validation pour le formulaire de webhook
-const webhookFormSchema = z.object({
-  name: z.string()
-    .min(2, "Le nom doit contenir au moins 2 caractères")
-    .max(50, "Le nom ne peut pas dépasser 50 caractères"),
-  url: z.string()
-    .url("L'URL doit être valide (ex: https://example.com)"),
-  type: z.string(),
-});
-
-type WebhookFormValues = z.infer<typeof webhookFormSchema>;
-
-const webhookTypes = [
-  { value: "discord", label: "Discord" },
-  { value: "slack", label: "Slack" },
-  { value: "teams", label: "Microsoft Teams" },
-  { value: "custom", label: "HTTP personnalisé" },
-];
+// Type pour les webhooks
+interface Webhook {
+  id: string;
+  name: string;
+  url: string;
+  type: string;
+  active: boolean;
+}
 
 const NotificationsTab = () => {
   const queryClient = useQueryClient();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-
-  // Formulaire pour l'ajout de webhook
-  const form = useForm<WebhookFormValues>({
-    resolver: zodResolver(webhookFormSchema),
-    defaultValues: {
-      name: '',
-      url: '',
-      type: 'discord',
-    },
-  });
+  const [webhooks, setWebhooks] = useState<Webhook[]>([]);
+  const [newWebhook, setNewWebhook] = useState({ name: '', url: '', type: 'slack' });
 
   // Requête pour obtenir les webhooks
-  const { data: webhooks = [], isLoading: isLoadingWebhooks } = useQuery({
+  const { data: webhookUrls, isLoading: isLoadingWebhooks } = useQuery({
     queryKey: ['webhooks'],
-    queryFn: webhooksApi.getWebhooks,
+    queryFn: webhooksApi.getWebhooks
   });
 
-  // Mutation pour ajouter un webhook
-  const addWebhookMutation = useMutation({
-    mutationFn: (newWebhook: Omit<Webhook, 'id'>) => 
-      webhooksApi.addWebhook(newWebhook),
+  // Mutation pour mettre à jour les webhooks
+  const updateWebhooksMutation = useMutation({
+    mutationFn: (webhookList: string[]) => webhooksApi.updateWebhooks(webhookList),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhooks'] });
-      setIsAddDialogOpen(false);
-      form.reset();
-    },
+    }
   });
 
-  // Mutation pour mettre à jour un webhook
-  const updateWebhookMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number, data: Partial<Webhook> }) => 
-      webhooksApi.updateWebhook(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['webhooks'] });
-    },
-  });
+  // Effet pour mettre à jour l'état local des webhooks à partir des données de l'API
+  React.useEffect(() => {
+    if (webhookUrls) {
+      const formattedWebhooks: Webhook[] = webhookUrls.map((url, index) => ({
+        id: `api-${index}`,
+        name: `Webhook ${index + 1}`,
+        url,
+        type: url.includes('discord') ? 'discord' : 'slack',
+        active: true
+      }));
+      setWebhooks(formattedWebhooks);
+    }
+  }, [webhookUrls]);
 
-  // Mutation pour supprimer un webhook
-  const deleteWebhookMutation = useMutation({
-    mutationFn: (id: number) => webhooksApi.deleteWebhook(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['webhooks'] });
-    },
-  });
+  const handleAddWebhook = () => {
+    if (!newWebhook.name || !newWebhook.url) {
+      toast({
+        title: "Information manquante",
+        description: "Veuillez remplir tous les champs requis.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-  // Gestion de l'ajout de webhook
-  const handleAddWebhook = (values: WebhookFormValues) => {
-    addWebhookMutation.mutate({
-      name: values.name,
-      url: values.url,
-      type: values.type,
-      actif: true,
-    });
-  };
+    const newWebhookList = [
+      ...webhooks,
+      {
+        id: Date.now().toString(),
+        name: newWebhook.name,
+        url: newWebhook.url,
+        type: newWebhook.type,
+        active: true,
+      },
+    ];
+    
+    setWebhooks(newWebhookList);
+    setNewWebhook({ name: '', url: '', type: 'slack' });
 
-  // Gestion de la suppression de webhook
-  const handleRemoveWebhook = (id: number) => {
-    deleteWebhookMutation.mutate(id);
-  };
+    // Mettre à jour les webhooks dans l'API
+    updateWebhooksMutation.mutate(newWebhookList.map(webhook => webhook.url));
 
-  // Gestion de l'activation/désactivation de webhook
-  const handleToggleWebhookActive = (id: number, currentState: boolean) => {
-    updateWebhookMutation.mutate({
-      id,
-      data: { actif: !currentState }
-    });
-  };
-
-  // Gestion de l'envoi de test
-  const handleSendTest = (webhook: Webhook) => {
     toast({
-      title: "Test envoyé",
-      description: `Une notification test a été envoyée à ${webhook.name}.`,
+      title: "Webhook ajouté",
+      description: "Le webhook a été ajouté pour les notifications d'alerte.",
     });
+  };
+
+  const handleRemoveWebhook = (id: string) => {
+    const updatedWebhooks = webhooks.filter((webhook) => webhook.id !== id);
+    setWebhooks(updatedWebhooks);
+    
+    // Mettre à jour les webhooks dans l'API
+    updateWebhooksMutation.mutate(updatedWebhooks.map(webhook => webhook.url));
+
+    toast({
+      title: "Webhook supprimé",
+      description: "Le webhook a été supprimé des notifications.",
+    });
+  };
+
+  const handleToggleWebhookActive = (id: string) => {
+    const updatedWebhooks = webhooks.map((webhook) =>
+      webhook.id === id ? { ...webhook, active: !webhook.active } : webhook
+    );
+    
+    setWebhooks(updatedWebhooks);
+    
+    // On ne met à jour l'API que si le webhook est complètement supprimé,
+    // pas juste pour changer son état d'activation local
   };
 
   return (
@@ -125,7 +122,7 @@ const NotificationsTab = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+          <Dialog>
             <DialogTrigger asChild>
               <Button className="w-full">
                 <PlusIcon className="h-4 w-4 mr-2" />
@@ -139,71 +136,60 @@ const NotificationsTab = () => {
                   Ajoutez un webhook pour recevoir les notifications d'alerte
                 </DialogDescription>
               </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(handleAddWebhook)} className="space-y-4">
-                  <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nom</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Alertes Slack" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="webhook-name" className="text-right">
+                    Nom
+                  </Label>
+                  <Input
+                    id="webhook-name"
+                    placeholder="Alertes Slack"
+                    className="col-span-3"
+                    value={newWebhook.name}
+                    onChange={(e) => setNewWebhook({ ...newWebhook, name: e.target.value })}
                   />
-                  <FormField
-                    control={form.control}
-                    name="url"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>URL</FormLabel>
-                        <FormControl>
-                          <Input placeholder="https://..." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="webhook-url" className="text-right">
+                    URL
+                  </Label>
+                  <Input
+                    id="webhook-url"
+                    placeholder="https://..."
+                    className="col-span-3"
+                    value={newWebhook.url}
+                    onChange={(e) => setNewWebhook({ ...newWebhook, url: e.target.value })}
                   />
-                  <FormField
-                    control={form.control}
-                    name="type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Type</FormLabel>
-                        <Select 
-                          value={field.value} 
-                          onValueChange={field.onChange}
-                        >
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Sélectionner un type de webhook" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {webhookTypes.map((type) => (
-                              <SelectItem key={type.value} value={type.value}>
-                                {type.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <DialogFooter>
-                    <Button 
-                      type="submit"
-                      disabled={addWebhookMutation.isPending}
-                    >
-                      {addWebhookMutation.isPending ? "Ajout en cours..." : "Ajouter le webhook"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
+                </div>
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="webhook-type" className="text-right">
+                    Type
+                  </Label>
+                  <Select 
+                    value={newWebhook.type}
+                    onValueChange={(value) => setNewWebhook({ ...newWebhook, type: value })}
+                  >
+                    <SelectTrigger className="col-span-3">
+                      <SelectValue placeholder="Sélectionner un type de webhook" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="slack">Slack</SelectItem>
+                      <SelectItem value="discord">Discord</SelectItem>
+                      <SelectItem value="telegram">Telegram</SelectItem>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="custom">HTTP personnalisé</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button 
+                  onClick={handleAddWebhook}
+                  disabled={updateWebhooksMutation.isPending}
+                >
+                  {updateWebhooksMutation.isPending ? "Ajout en cours..." : "Ajouter le webhook"}
+                </Button>
+              </DialogFooter>
             </DialogContent>
           </Dialog>
 
@@ -223,9 +209,9 @@ const NotificationsTab = () => {
                       {webhook.name}
                       <Badge
                         variant="outline"
-                        className={webhook.actif ? "bg-green-500/10 text-green-500" : "bg-gray-500/10 text-gray-500"}
+                        className={webhook.active ? "bg-green-500/10 text-green-500" : "bg-gray-500/10 text-gray-500"}
                       >
-                        {webhook.actif ? "Actif" : "Inactif"}
+                        {webhook.active ? "Actif" : "Inactif"}
                       </Badge>
                     </div>
                     <div className="text-sm text-muted-foreground truncate max-w-md">{webhook.url}</div>
@@ -239,26 +225,26 @@ const NotificationsTab = () => {
                     <div className="flex items-center space-x-2">
                       <Switch
                         id={`webhook-toggle-${webhook.id}`}
-                        checked={webhook.actif}
-                        onCheckedChange={() => handleToggleWebhookActive(webhook.id, webhook.actif)}
-                        disabled={updateWebhookMutation.isPending}
+                        checked={webhook.active}
+                        onCheckedChange={() => handleToggleWebhookActive(webhook.id)}
                       />
                       <Label htmlFor={`webhook-toggle-${webhook.id}`} className="text-sm">
-                        {webhook.actif ? "Activé" : "Désactivé"}
+                        {webhook.active ? "Activé" : "Désactivé"}
                       </Label>
                     </div>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleSendTest(webhook)}
-                    >
+                    <Button variant="outline" size="sm" onClick={() => {
+                      toast({
+                        title: "Test envoyé",
+                        description: "Une notification test a été envoyée au webhook.",
+                      });
+                    }}>
                       Test
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={() => handleRemoveWebhook(webhook.id)}
-                      disabled={deleteWebhookMutation.isPending}
+                      disabled={updateWebhooksMutation.isPending}
                     >
                       <TrashIcon className="h-4 w-4 text-destructive" />
                     </Button>
