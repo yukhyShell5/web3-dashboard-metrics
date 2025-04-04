@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,54 +8,116 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusIcon, TrashIcon } from 'lucide-react';
+import { PlusIcon, TrashIcon, PencilIcon } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { addressesApi } from '@/services/apiService';
 
 // Type pour les adresses surveillées
-interface MonitoredAddress {
-  id: string;
+interface WatchedAddress {
+  id: number;
   address: string;
-  label: string;
-  chain: string;
-  monitored: boolean;
+  name: string;
+  blockchain: string;
+  active: boolean;
 }
 
 const AddressesTab = () => {
   const queryClient = useQueryClient();
-  const [addresses, setAddresses] = useState<MonitoredAddress[]>([]);
-  const [newAddress, setNewAddress] = useState({ address: '', label: '', chain: 'ethereum' });
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentAddress, setCurrentAddress] = useState<Partial<WatchedAddress>>({
+    address: '',
+    name: '',
+    blockchain: 'ethereum',
+    active: true
+  });
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Requête pour obtenir les adresses surveillées
-  const { data: watchedAddresses, isLoading: isLoadingAddresses } = useQuery({
-    queryKey: ['watchedAddresses'],
-    queryFn: addressesApi.getWatchedAddresses
+  const { data: watchedAddresses, isLoading: isLoadingAddresses } = useQuery<WatchedAddress[]>({
+    queryKey: ['watched-addresses'],
+    queryFn: () => addressesApi.getWatchedAddresses().then(res => res.watched_addresses)
   });
 
-  // Mutation pour mettre à jour les adresses surveillées
-  const updateAddressesMutation = useMutation({
-    mutationFn: (addressList: string[]) => addressesApi.updateWatchedAddresses(addressList),
+  // Mutation pour créer une nouvelle adresse
+  const createAddressMutation = useMutation({
+    mutationFn: (newAddress: Omit<WatchedAddress, 'id'>) => 
+      addressesApi.createWatchedAddress(newAddress),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['watchedAddresses'] });
+      queryClient.invalidateQueries({ queryKey: ['watched-addresses'] });
+      toast({
+        title: "Adresse ajoutée",
+        description: "L'adresse blockchain a été ajoutée au monitoring.",
+      });
+      setIsDialogOpen(false);
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'ajout de l'adresse.",
+        variant: "destructive",
+      });
     }
   });
 
-  // Effet pour mettre à jour l'état local à partir des données de l'API
-  React.useEffect(() => {
-    if (watchedAddresses) {
-      const formattedAddresses: MonitoredAddress[] = watchedAddresses.map((address, index) => ({
-        id: `api-${index}`,
-        address,
-        label: `Adresse ${index + 1}`,
-        chain: 'ethereum',
-        monitored: true
-      }));
-      setAddresses(formattedAddresses);
+  // Mutation pour mettre à jour une adresse
+  const updateAddressMutation = useMutation({
+    mutationFn: ({ id, ...data }: WatchedAddress) => 
+      addressesApi.updateWatchedAddress(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['watched-addresses'] });
+      toast({
+        title: "Adresse mise à jour",
+        description: "L'adresse blockchain a été modifiée avec succès.",
+      });
+      setIsDialogOpen(false);
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la mise à jour de l'adresse.",
+        variant: "destructive",
+      });
     }
-  }, [watchedAddresses]);
+  });
 
-  const handleAddAddress = () => {
-    if (!newAddress.address || !newAddress.label) {
+  // Mutation pour supprimer une adresse
+  const deleteAddressMutation = useMutation({
+    mutationFn: (id: number) => addressesApi.deleteWatchedAddress(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['watched-addresses'] });
+      toast({
+        title: "Adresse supprimée",
+        description: "L'adresse blockchain a été supprimée du monitoring.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la suppression de l'adresse.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const handleOpenAddDialog = () => {
+    setIsEditMode(false);
+    setCurrentAddress({
+      address: '',
+      name: '',
+      blockchain: 'ethereum',
+      active: true
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleOpenEditDialog = (address: WatchedAddress) => {
+    setIsEditMode(true);
+    setCurrentAddress(address);
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmit = () => {
+    if (!currentAddress.address || !currentAddress.name) {
       toast({
         title: "Information manquante",
         description: "Veuillez remplir tous les champs requis.",
@@ -65,51 +126,18 @@ const AddressesTab = () => {
       return;
     }
 
-    const newAddressList = [
-      ...addresses,
-      {
-        id: Date.now().toString(),
-        address: newAddress.address,
-        label: newAddress.label,
-        chain: newAddress.chain,
-        monitored: true,
-      },
-    ];
-    
-    setAddresses(newAddressList);
-    setNewAddress({ address: '', label: '', chain: 'ethereum' });
-
-    // Mettre à jour les adresses dans l'API
-    updateAddressesMutation.mutate(newAddressList.map(addr => addr.address));
-
-    toast({
-      title: "Adresse ajoutée",
-      description: "L'adresse blockchain a été ajoutée au monitoring.",
-    });
+    if (isEditMode && currentAddress.id) {
+      updateAddressMutation.mutate(currentAddress as WatchedAddress);
+    } else {
+      createAddressMutation.mutate(currentAddress as Omit<WatchedAddress, 'id'>);
+    }
   };
 
-  const handleRemoveAddress = (id: string) => {
-    const updatedAddresses = addresses.filter((address) => address.id !== id);
-    setAddresses(updatedAddresses);
-    
-    // Mettre à jour les adresses dans l'API
-    updateAddressesMutation.mutate(updatedAddresses.map(addr => addr.address));
-
-    toast({
-      title: "Adresse supprimée",
-      description: "L'adresse blockchain a été supprimée du monitoring.",
+  const handleToggleActive = (address: WatchedAddress) => {
+    updateAddressMutation.mutate({
+      ...address,
+      active: !address.active
     });
-  };
-
-  const handleToggleAddressMonitoring = (id: string) => {
-    const updatedAddresses = addresses.map((address) =>
-      address.id === id ? { ...address, monitored: !address.monitored } : address
-    );
-    
-    setAddresses(updatedAddresses);
-    
-    // On ne met à jour l'API que si l'adresse est complètement supprimée, 
-    // pas juste pour changer son état de monitoring local
   };
 
   return (
@@ -121,18 +149,21 @@ const AddressesTab = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="w-full">
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Ajouter une nouvelle adresse
-            </Button>
-          </DialogTrigger>
+        <Button onClick={handleOpenAddDialog} className="w-full">
+          <PlusIcon className="h-4 w-4 mr-2" />
+          Ajouter une nouvelle adresse
+        </Button>
+
+        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Ajouter une adresse blockchain</DialogTitle>
+              <DialogTitle>
+                {isEditMode ? "Modifier l'adresse" : "Ajouter une adresse blockchain"}
+              </DialogTitle>
               <DialogDescription>
-                Ajoutez une nouvelle adresse à surveiller pour les événements de sécurité
+                {isEditMode 
+                  ? "Modifiez les détails de l'adresse surveillée"
+                  : "Ajoutez une nouvelle adresse à surveiller pour les événements de sécurité"}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
@@ -144,35 +175,34 @@ const AddressesTab = () => {
                   id="address"
                   placeholder="0x..."
                   className="col-span-3"
-                  value={newAddress.address}
-                  onChange={(e) => setNewAddress({ ...newAddress, address: e.target.value })}
+                  value={currentAddress.address}
+                  onChange={(e) => setCurrentAddress({...currentAddress, address: e.target.value})}
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="label" className="text-right">
-                  Libellé
+                <Label htmlFor="name" className="text-right">
+                  Nom
                 </Label>
                 <Input
-                  id="label"
+                  id="name"
                   placeholder="Mon portefeuille"
                   className="col-span-3"
-                  value={newAddress.label}
-                  onChange={(e) => setNewAddress({ ...newAddress, label: e.target.value })}
+                  value={currentAddress.name}
+                  onChange={(e) => setCurrentAddress({...currentAddress, name: e.target.value})}
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="chain" className="text-right">
+                <Label htmlFor="blockchain" className="text-right">
                   Blockchain
                 </Label>
                 <Select 
-                  value={newAddress.chain}
-                  onValueChange={(value) => setNewAddress({ ...newAddress, chain: value })}
+                  value={currentAddress.blockchain}
+                  onValueChange={(value) => setCurrentAddress({...currentAddress, blockchain: value})}
                 >
                   <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Sélectionner une blockchain" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Toutes les chaînes</SelectItem>
                     <SelectItem value="ethereum">Ethereum</SelectItem>
                     <SelectItem value="polygon">Polygon</SelectItem>
                     <SelectItem value="arbitrum">Arbitrum</SelectItem>
@@ -181,13 +211,28 @@ const AddressesTab = () => {
                   </SelectContent>
                 </Select>
               </div>
+              {isEditMode && (
+                <div className="grid grid-cols-4 items-center gap-4">
+                  <Label htmlFor="active" className="text-right">
+                    Actif
+                  </Label>
+                  <Switch
+                    id="active"
+                    checked={currentAddress.active ?? false}
+                    onCheckedChange={(checked) => setCurrentAddress({...currentAddress, active: checked})}
+                    className="col-span-3"
+                  />
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button 
-                onClick={handleAddAddress}
-                disabled={updateAddressesMutation.isPending}
+                onClick={handleSubmit}
+                disabled={createAddressMutation.isPending || updateAddressMutation.isPending}
               >
-                {updateAddressesMutation.isPending ? "Ajout en cours..." : "Ajouter l'adresse"}
+                {createAddressMutation.isPending || updateAddressMutation.isPending 
+                  ? "Enregistrement en cours..." 
+                  : isEditMode ? "Mettre à jour" : "Ajouter"}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -197,27 +242,27 @@ const AddressesTab = () => {
           <div className="py-10 text-center text-muted-foreground">
             Chargement des adresses...
           </div>
-        ) : addresses.length > 0 ? (
+        ) : watchedAddresses && watchedAddresses.length > 0 ? (
           <div className="space-y-4 mt-4">
-            {addresses.map((address) => (
+            {watchedAddresses.map((address) => (
               <div
                 key={address.id}
                 className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border rounded-lg bg-card"
               >
                 <div className="space-y-1 mb-2 sm:mb-0">
                   <div className="font-medium flex flex-wrap gap-2 items-center">
-                    {address.label}
+                    {address.name}
                     <Badge
                       variant="outline"
-                      className={address.monitored ? "bg-green-500/10 text-green-500" : "bg-gray-500/10 text-gray-500"}
+                      className={address.active ? "bg-green-500/10 text-green-500" : "bg-gray-500/10 text-gray-500"}
                     >
-                      {address.monitored ? "Surveillance active" : "En pause"}
+                      {address.active ? "Actif" : "Inactif"}
                     </Badge>
                   </div>
                   <div className="text-sm text-muted-foreground font-mono">{address.address}</div>
                   <div className="text-xs">
                     <Badge variant="outline" className="mr-1">
-                      {address.chain === 'all' ? 'Toutes les chaînes' : address.chain}
+                      {address.blockchain}
                     </Badge>
                   </div>
                 </div>
@@ -225,18 +270,27 @@ const AddressesTab = () => {
                   <div className="flex items-center space-x-2">
                     <Switch
                       id={`address-toggle-${address.id}`}
-                      checked={address.monitored}
-                      onCheckedChange={() => handleToggleAddressMonitoring(address.id)}
+                      checked={address.active}
+                      onCheckedChange={() => handleToggleActive(address)}
+                      disabled={updateAddressMutation.isPending}
                     />
                     <Label htmlFor={`address-toggle-${address.id}`} className="text-sm">
-                      {address.monitored ? "Activé" : "Désactivé"}
+                      {address.active ? "Activé" : "Désactivé"}
                     </Label>
                   </div>
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleRemoveAddress(address.id)}
-                    disabled={updateAddressesMutation.isPending}
+                    onClick={() => handleOpenEditDialog(address)}
+                    disabled={updateAddressMutation.isPending}
+                  >
+                    <PencilIcon className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => deleteAddressMutation.mutate(address.id)}
+                    disabled={deleteAddressMutation.isPending}
                   >
                     <TrashIcon className="h-4 w-4 text-destructive" />
                   </Button>

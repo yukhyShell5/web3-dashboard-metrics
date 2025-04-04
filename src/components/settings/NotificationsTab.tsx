@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,14 +27,27 @@ const NotificationsTab = () => {
   const [newWebhook, setNewWebhook] = useState({ name: '', url: '', type: 'slack' });
 
   // Requête pour obtenir les webhooks
-  const { data: webhookUrls, isLoading: isLoadingWebhooks } = useQuery({
+  const { data: webhookData, isLoading: isLoadingWebhooks } = useQuery({
     queryKey: ['webhooks'],
     queryFn: webhooksApi.getWebhooks
   });
 
-  // Mutation pour mettre à jour les webhooks
-  const updateWebhooksMutation = useMutation({
-    mutationFn: (webhookList: string[]) => webhooksApi.updateWebhooks(webhookList),
+  // Mutation pour créer un nouveau webhook
+  const createWebhookMutation = useMutation({
+    mutationFn: (webhook: Omit<Webhook, 'id'>) => webhooksApi.createWebhook({
+      name: webhook.name,
+      url: webhook.url,
+      type: webhook.type,
+      active: true
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks'] });
+    }
+  });
+
+  // Mutation pour supprimer un webhook
+  const deleteWebhookMutation = useMutation({
+    mutationFn: (id: number) => webhooksApi.deleteWebhook(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhooks'] });
     }
@@ -43,17 +55,17 @@ const NotificationsTab = () => {
 
   // Effet pour mettre à jour l'état local des webhooks à partir des données de l'API
   React.useEffect(() => {
-    if (webhookUrls) {
-      const formattedWebhooks: Webhook[] = webhookUrls.map((url, index) => ({
-        id: `api-${index}`,
-        name: `Webhook ${index + 1}`,
-        url,
-        type: url.includes('discord') ? 'discord' : 'slack',
-        active: true
+    if (webhookData?.webhooks) {
+      const formattedWebhooks: Webhook[] = webhookData.webhooks.map((webhook) => ({
+        id: webhook.id.toString(),
+        name: webhook.name,
+        url: webhook.url,
+        type: webhook.type,
+        active: webhook.active
       }));
       setWebhooks(formattedWebhooks);
     }
-  }, [webhookUrls]);
+  }, [webhookData]);
 
   const handleAddWebhook = () => {
     if (!newWebhook.name || !newWebhook.url) {
@@ -65,51 +77,47 @@ const NotificationsTab = () => {
       return;
     }
 
-    const newWebhookList = [
-      ...webhooks,
-      {
-        id: Date.now().toString(),
-        name: newWebhook.name,
-        url: newWebhook.url,
-        type: newWebhook.type,
-        active: true,
-      },
-    ];
-    
-    setWebhooks(newWebhookList);
-    setNewWebhook({ name: '', url: '', type: 'slack' });
-
-    // Mettre à jour les webhooks dans l'API
-    updateWebhooksMutation.mutate(newWebhookList.map(webhook => webhook.url));
-
-    toast({
-      title: "Webhook ajouté",
-      description: "Le webhook a été ajouté pour les notifications d'alerte.",
+    createWebhookMutation.mutate({
+      name: newWebhook.name,
+      url: newWebhook.url,
+      type: newWebhook.type,
+      active: true
     });
+
+    setNewWebhook({ name: '', url: '', type: 'slack' });
   };
 
   const handleRemoveWebhook = (id: string) => {
-    const updatedWebhooks = webhooks.filter((webhook) => webhook.id !== id);
-    setWebhooks(updatedWebhooks);
-    
-    // Mettre à jour les webhooks dans l'API
-    updateWebhooksMutation.mutate(updatedWebhooks.map(webhook => webhook.url));
-
-    toast({
-      title: "Webhook supprimé",
-      description: "Le webhook a été supprimé des notifications.",
-    });
+    const webhookId = parseInt(id);
+    if (!isNaN(webhookId)) {
+      deleteWebhookMutation.mutate(webhookId);
+    } else {
+      toast({
+        title: "Erreur",
+        description: "ID de webhook invalide",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleToggleWebhookActive = (id: string) => {
-    const updatedWebhooks = webhooks.map((webhook) =>
-      webhook.id === id ? { ...webhook, active: !webhook.active } : webhook
-    );
-    
-    setWebhooks(updatedWebhooks);
-    
-    // On ne met à jour l'API que si le webhook est complètement supprimé,
-    // pas juste pour changer son état d'activation local
+    const webhookId = parseInt(id);
+    if (!isNaN(webhookId)) {
+      const webhook = webhooks.find(w => w.id === id);
+      if (webhook) {
+        webhooksApi.updateWebhook(webhookId, { active: !webhook.active })
+          .then(() => {
+            queryClient.invalidateQueries({ queryKey: ['webhooks'] });
+          })
+          .catch(error => {
+            toast({
+              title: "Erreur",
+              description: "Échec de la mise à jour du webhook",
+              variant: "destructive",
+            });
+          });
+      }
+    }
   };
 
   return (
@@ -185,9 +193,9 @@ const NotificationsTab = () => {
               <DialogFooter>
                 <Button 
                   onClick={handleAddWebhook}
-                  disabled={updateWebhooksMutation.isPending}
+                  disabled={createWebhookMutation.isPending}
                 >
-                  {updateWebhooksMutation.isPending ? "Ajout en cours..." : "Ajouter le webhook"}
+                  {createWebhookMutation.isPending ? "Ajout en cours..." : "Ajouter le webhook"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -244,7 +252,7 @@ const NotificationsTab = () => {
                       variant="ghost"
                       size="icon"
                       onClick={() => handleRemoveWebhook(webhook.id)}
-                      disabled={updateWebhooksMutation.isPending}
+                      disabled={deleteWebhookMutation.isPending}
                     >
                       <TrashIcon className="h-4 w-4 text-destructive" />
                     </Button>

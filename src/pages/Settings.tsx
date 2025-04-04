@@ -23,7 +23,7 @@ const Settings = () => {
   // Effet pour mettre à jour l'état du monitoring
   useEffect(() => {
     if (monitoringStatus !== undefined) {
-      setIsMonitoring(monitoringStatus);
+      setIsMonitoring(monitoringStatus.count > 0);
     }
   }, [monitoringStatus]);
 
