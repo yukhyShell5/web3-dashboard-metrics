@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,6 +29,7 @@ const addressFormSchema = z.object({
 
 type AddressFormValues = z.infer<typeof addressFormSchema>;
 
+// Updated blockchains array to use lowercase values that match the FastAPI enum
 const blockchains = [
   { value: "ethereum", label: "Ethereum" },
   { value: "polygon", label: "Polygon" },

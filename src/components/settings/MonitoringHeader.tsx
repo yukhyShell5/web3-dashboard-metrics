@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { addressesApi, webhooksApi } from '@/services/apiService';
 import { PlayIcon, StopCircleIcon, FileIcon } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
