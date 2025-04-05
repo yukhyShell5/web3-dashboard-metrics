@@ -23,7 +23,12 @@ import {
   PauseCircleIcon,
   ScrollTextIcon,
   BookIcon,
-  InfoIcon
+  InfoIcon,
+  EditIcon,
+  CopyIcon,
+  TrashIcon,
+  PauseIcon,
+  PlayIcon
 } from 'lucide-react';
 
 type Rule = {
@@ -39,9 +44,19 @@ type Rule = {
 
 interface RuleListProps {
   rules: Rule[];
+  onEdit: (rule: Rule) => void;
+  onToggleStatus: (rule: Rule) => void;
+  onDuplicate: (rule: Rule) => void;
+  onDelete: (rule: Rule) => void;
 }
 
-const RuleList: React.FC<RuleListProps> = ({ rules }) => {
+const RuleList: React.FC<RuleListProps> = ({ 
+  rules, 
+  onEdit, 
+  onToggleStatus, 
+  onDuplicate, 
+  onDelete 
+}) => {
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
       case 'critical':
@@ -137,12 +152,34 @@ const RuleList: React.FC<RuleListProps> = ({ rules }) => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem>Edit</DropdownMenuItem>
-                    <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                    <DropdownMenuItem>
-                      {rule.status === 'active' ? 'Pause' : 'Activate'}
+                    <DropdownMenuItem onClick={() => onEdit(rule)}>
+                      <EditIcon className="h-4 w-4 mr-2" />
+                      Modifier
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onDuplicate(rule)}>
+                      <CopyIcon className="h-4 w-4 mr-2" />
+                      Dupliquer
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onToggleStatus(rule)}>
+                      {rule.status === 'active' ? (
+                        <>
+                          <PauseIcon className="h-4 w-4 mr-2" />
+                          Mettre en pause
+                        </>
+                      ) : (
+                        <>
+                          <PlayIcon className="h-4 w-4 mr-2" />
+                          Activer
+                        </>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => onDelete(rule)}
+                    >
+                      <TrashIcon className="h-4 w-4 mr-2" />
+                      Supprimer
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
