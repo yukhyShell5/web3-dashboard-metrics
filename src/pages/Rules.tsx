@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -272,6 +273,36 @@ const Rules = () => {
     setDeleteDialogOpen(true);
   };
 
+  const handleDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      setTimeout(() => {
+        setDialogOpen(open);
+      }, 50);
+    } else {
+      setDialogOpen(open);
+    }
+  };
+
+  const handleEditDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      setTimeout(() => {
+        setEditDialogOpen(open);
+      }, 50);
+    } else {
+      setEditDialogOpen(open);
+    }
+  };
+
+  const handleDeleteDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      setTimeout(() => {
+        setDeleteDialogOpen(open);
+      }, 50);
+    } else {
+      setDeleteDialogOpen(open);
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -279,7 +310,7 @@ const Rules = () => {
           <h1 className="text-3xl font-bold">Alert Rules</h1>
           <p className="text-muted-foreground">Configure detection rules for blockchain activity</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
           <DialogTrigger asChild>
             <Button className="flex items-center gap-2">
               <PlusIcon className="h-4 w-4" />
@@ -331,7 +362,7 @@ const Rules = () => {
       </div>
 
       {/* Edit Rule Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+      <Dialog open={editDialogOpen} onOpenChange={handleEditDialogOpenChange}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Edit Alert Rule</DialogTitle>
@@ -349,7 +380,7 @@ const Rules = () => {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={handleDeleteDialogOpenChange}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
