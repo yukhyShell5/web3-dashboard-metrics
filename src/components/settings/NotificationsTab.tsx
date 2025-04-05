@@ -8,13 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PlusIcon, TrashIcon } from 'lucide-react';
+import { PlusIcon, TrashIcon, PencilIcon } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 import { webhooksApi } from '@/services/apiService';
 
-// Type pour les webhooks
 interface Webhook {
-  id: string;
+  id: number;
   name: string;
   url: string;
   type: string;
@@ -23,25 +22,60 @@ interface Webhook {
 
 const NotificationsTab = () => {
   const queryClient = useQueryClient();
-  const [webhooks, setWebhooks] = useState<Webhook[]>([]);
-  const [newWebhook, setNewWebhook] = useState({ name: '', url: '', type: 'slack' });
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [currentWebhook, setCurrentWebhook] = useState<Partial<Webhook>>({
+    name: '',
+    url: '',
+    type: 'slack',
+    active: true
+  });
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Requête pour obtenir les webhooks
-  const { data: webhookData, isLoading: isLoadingWebhooks } = useQuery({
+  const { data: webhooks, isLoading: isLoadingWebhooks } = useQuery<Webhook[]>({
     queryKey: ['webhooks'],
-    queryFn: webhooksApi.getWebhooks
+    queryFn: () => webhooksApi.getWebhooks().then(res => res.webhooks)
   });
 
   // Mutation pour créer un nouveau webhook
   const createWebhookMutation = useMutation({
-    mutationFn: (webhook: Omit<Webhook, 'id'>) => webhooksApi.createWebhook({
-      name: webhook.name,
-      url: webhook.url,
-      type: webhook.type,
-      active: true
-    }),
+    mutationFn: (newWebhook: Omit<Webhook, 'id'>) => 
+      webhooksApi.createWebhook(newWebhook),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhooks'] });
+      toast({
+        title: "Webhook ajouté",
+        description: "Le webhook a été ajouté avec succès.",
+      });
+      setIsDialogOpen(false);
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de l'ajout du webhook.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Mutation pour mettre à jour un webhook
+  const updateWebhookMutation = useMutation({
+    mutationFn: ({ id, ...data }: Webhook) => 
+      webhooksApi.updateWebhook(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['webhooks'] });
+      toast({
+        title: "Webhook mis à jour",
+        description: "Le webhook a été modifié avec succès.",
+      });
+      setIsDialogOpen(false);
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la mise à jour du webhook.",
+        variant: "destructive",
+      });
     }
   });
 
@@ -50,25 +84,58 @@ const NotificationsTab = () => {
     mutationFn: (id: number) => webhooksApi.deleteWebhook(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webhooks'] });
+      toast({
+        title: "Webhook supprimé",
+        description: "Le webhook a été supprimé avec succès.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la suppression du webhook.",
+        variant: "destructive",
+      });
     }
   });
 
-  // Effet pour mettre à jour l'état local des webhooks à partir des données de l'API
-  React.useEffect(() => {
-    if (webhookData?.webhooks) {
-      const formattedWebhooks: Webhook[] = webhookData.webhooks.map((webhook) => ({
-        id: webhook.id.toString(),
-        name: webhook.name,
-        url: webhook.url,
-        type: webhook.type,
-        active: webhook.active
-      }));
-      setWebhooks(formattedWebhooks);
+  // Mutation pour tester un webhook
+  const testWebhookMutation = useMutation({
+    mutationFn: (id: number) => webhooksApi.testWebhook(id),
+    onSuccess: () => {
+      toast({
+        title: "Test réussi",
+        description: "La notification test a été envoyée avec succès.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors de l'envoi du test.",
+        variant: "destructive",
+      });
     }
-  }, [webhookData]);
+  });
+  
 
-  const handleAddWebhook = () => {
-    if (!newWebhook.name || !newWebhook.url) {
+  const handleOpenAddDialog = () => {
+    setIsEditMode(false);
+    setCurrentWebhook({
+      name: '',
+      url: '',
+      type: 'slack',
+      active: true
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleOpenEditDialog = (webhook: Webhook) => {
+    setIsEditMode(true);
+    setCurrentWebhook(webhook);
+    setIsDialogOpen(true);
+  };
+
+  const handleSubmit = () => {
+    if (!currentWebhook.name || !currentWebhook.url) {
       toast({
         title: "Information manquante",
         description: "Veuillez remplir tous les champs requis.",
@@ -77,47 +144,22 @@ const NotificationsTab = () => {
       return;
     }
 
-    createWebhookMutation.mutate({
-      name: newWebhook.name,
-      url: newWebhook.url,
-      type: newWebhook.type,
-      active: true
-    });
-
-    setNewWebhook({ name: '', url: '', type: 'slack' });
-  };
-
-  const handleRemoveWebhook = (id: string) => {
-    const webhookId = parseInt(id);
-    if (!isNaN(webhookId)) {
-      deleteWebhookMutation.mutate(webhookId);
+    if (isEditMode && currentWebhook.id) {
+      updateWebhookMutation.mutate(currentWebhook as Webhook);
     } else {
-      toast({
-        title: "Erreur",
-        description: "ID de webhook invalide",
-        variant: "destructive",
-      });
+      createWebhookMutation.mutate(currentWebhook as Omit<Webhook, 'id'>);
     }
   };
 
-  const handleToggleWebhookActive = (id: string) => {
-    const webhookId = parseInt(id);
-    if (!isNaN(webhookId)) {
-      const webhook = webhooks.find(w => w.id === id);
-      if (webhook) {
-        webhooksApi.updateWebhook(webhookId, { active: !webhook.active })
-          .then(() => {
-            queryClient.invalidateQueries({ queryKey: ['webhooks'] });
-          })
-          .catch(error => {
-            toast({
-              title: "Erreur",
-              description: "Échec de la mise à jour du webhook",
-              variant: "destructive",
-            });
-          });
-      }
-    }
+  const handleToggleActive = (webhook: Webhook) => {
+    updateWebhookMutation.mutate({
+      ...webhook,
+      active: !webhook.active
+    });
+  };
+
+  const handleTestWebhook = (id: number) => {
+    testWebhookMutation.mutate(id);
   };
 
   return (
@@ -130,55 +172,58 @@ const NotificationsTab = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="w-full">
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Ajouter un nouveau webhook
-              </Button>
-            </DialogTrigger>
+          <Button onClick={handleOpenAddDialog} className="w-full">
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Ajouter un nouveau webhook
+          </Button>
+
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Ajouter un webhook de notification</DialogTitle>
+                <DialogTitle>
+                  {isEditMode ? "Modifier le webhook" : "Ajouter un webhook"}
+                </DialogTitle>
                 <DialogDescription>
-                  Ajoutez un webhook pour recevoir les notifications d'alerte
+                  {isEditMode 
+                    ? "Modifiez les détails du webhook de notification"
+                    : "Ajoutez un nouveau webhook pour recevoir les alertes de sécurité"}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="webhook-name" className="text-right">
+                  <Label htmlFor="name" className="text-right">
                     Nom
                   </Label>
                   <Input
-                    id="webhook-name"
+                    id="name"
                     placeholder="Alertes Slack"
                     className="col-span-3"
-                    value={newWebhook.name}
-                    onChange={(e) => setNewWebhook({ ...newWebhook, name: e.target.value })}
+                    value={currentWebhook.name}
+                    onChange={(e) => setCurrentWebhook({...currentWebhook, name: e.target.value})}
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="webhook-url" className="text-right">
+                  <Label htmlFor="url" className="text-right">
                     URL
                   </Label>
                   <Input
-                    id="webhook-url"
+                    id="url"
                     placeholder="https://..."
                     className="col-span-3"
-                    value={newWebhook.url}
-                    onChange={(e) => setNewWebhook({ ...newWebhook, url: e.target.value })}
+                    value={currentWebhook.url}
+                    onChange={(e) => setCurrentWebhook({...currentWebhook, url: e.target.value})}
                   />
                 </div>
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="webhook-type" className="text-right">
+                  <Label htmlFor="type" className="text-right">
                     Type
                   </Label>
                   <Select 
-                    value={newWebhook.type}
-                    onValueChange={(value) => setNewWebhook({ ...newWebhook, type: value })}
+                    value={currentWebhook.type}
+                    onValueChange={(value) => setCurrentWebhook({...currentWebhook, type: value})}
                   >
                     <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Sélectionner un type de webhook" />
+                      <SelectValue placeholder="Sélectionner un type" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="slack">Slack</SelectItem>
@@ -189,13 +234,28 @@ const NotificationsTab = () => {
                     </SelectContent>
                   </Select>
                 </div>
+                {isEditMode && (
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="active" className="text-right">
+                      Actif
+                    </Label>
+                    <Switch
+                      id="active"
+                      checked={currentWebhook.active ?? false}
+                      onCheckedChange={(checked) => setCurrentWebhook({...currentWebhook, active: checked})}
+                      className="col-span-3"
+                    />
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <Button 
-                  onClick={handleAddWebhook}
-                  disabled={createWebhookMutation.isPending}
+                  onClick={handleSubmit}
+                  disabled={createWebhookMutation.isPending || updateWebhookMutation.isPending}
                 >
-                  {createWebhookMutation.isPending ? "Ajout en cours..." : "Ajouter le webhook"}
+                  {createWebhookMutation.isPending || updateWebhookMutation.isPending 
+                    ? "Enregistrement en cours..." 
+                    : isEditMode ? "Mettre à jour" : "Ajouter"}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -205,7 +265,7 @@ const NotificationsTab = () => {
             <div className="py-10 text-center text-muted-foreground">
               Chargement des webhooks...
             </div>
-          ) : webhooks.length > 0 ? (
+          ) : webhooks && webhooks.length > 0 ? (
             <div className="space-y-4 mt-4">
               {webhooks.map((webhook) => (
                 <div
@@ -234,24 +294,33 @@ const NotificationsTab = () => {
                       <Switch
                         id={`webhook-toggle-${webhook.id}`}
                         checked={webhook.active}
-                        onCheckedChange={() => handleToggleWebhookActive(webhook.id)}
+                        onCheckedChange={() => handleToggleActive(webhook)}
+                        disabled={updateWebhookMutation.isPending}
                       />
                       <Label htmlFor={`webhook-toggle-${webhook.id}`} className="text-sm">
                         {webhook.active ? "Activé" : "Désactivé"}
                       </Label>
                     </div>
-                    <Button variant="outline" size="sm" onClick={() => {
-                      toast({
-                        title: "Test envoyé",
-                        description: "Une notification test a été envoyée au webhook.",
-                      });
-                    }}>
-                      Test
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleTestWebhook(webhook.id)}
+                      disabled={testWebhookMutation.isPending}
+                    >
+                      {testWebhookMutation.isPending ? "Test en cours..." : "Tester"}
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleRemoveWebhook(webhook.id)}
+                      onClick={() => handleOpenEditDialog(webhook)}
+                      disabled={updateWebhookMutation.isPending}
+                    >
+                      <PencilIcon className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => deleteWebhookMutation.mutate(webhook.id)}
                       disabled={deleteWebhookMutation.isPending}
                     >
                       <TrashIcon className="h-4 w-4 text-destructive" />

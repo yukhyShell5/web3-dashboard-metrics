@@ -230,20 +230,49 @@ export const webhooksApi = {
       throw error;
     }
   },
+
+  testWebhook: async (id: number): Promise<void> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/webhooks/${id}/test`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error("Erreur lors du test du webhook:", error);
+      throw error;
+    }
+  },
   
   generateReport: async (): Promise<Blob> => {
     try {
-      const response = await fetch(`${API_BASE_URL}/generate-report`, {
-        method: "POST",
-      });
+      const response = await fetch(`${API_BASE_URL}/generate-report`);
       
       if (!response.ok) {
         await handleApiError(response);
       }
-      
+
+      // Vérifiez que le content-type est bien un PDF
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/pdf')) {
+        throw new Error('La réponse n\'est pas un PDF valide');
+      }
+
       return await response.blob();
     } catch (error) {
       console.error("Erreur lors de la génération du rapport:", error);
+      toast({
+        title: "Erreur",
+        description: "Échec de la génération du rapport",
+        variant: "destructive",
+      });
       throw error;
     }
   },
