@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -235,7 +234,7 @@ const Rules = () => {
     const updatedRules = rules.map(r => {
       if (r.id === rule.id) {
         const newStatus = r.status === 'active' ? 'paused' : 'active';
-        return { ...r, status: newStatus };
+        return { ...r, status: newStatus as 'active' | 'paused' | 'disabled' };
       }
       return r;
     });
