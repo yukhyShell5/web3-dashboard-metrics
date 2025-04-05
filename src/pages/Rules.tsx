@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -191,8 +190,9 @@ const Rules = () => {
     }
   };
 
-  const createRule = (formData: FormData) => {
-    // This would handle the rule creation logic in a real application
+  const handleCreateRule = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
     console.log('Creating new rule:', Object.fromEntries(formData));
     setDialogOpen(false);
   };
@@ -218,7 +218,7 @@ const Rules = () => {
                 Configure when and how alerts are triggered for monitored addresses
               </DialogDescription>
             </DialogHeader>
-            <form action={createRule} className="space-y-6 py-4">
+            <form onSubmit={handleCreateRule} className="space-y-6 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="name" className="text-right">
                   Rule Name
