@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { HomeIcon, PieChartIcon, LayoutDashboardIcon, AlertTriangleIcon, Settings2Icon, ShieldAlertIcon } from 'lucide-react';
+import { HomeIcon, PieChartIcon, LayoutDashboardIcon, AlertTriangleIcon, Settings2Icon, ShieldAlertIcon, LogInIcon } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
+import { Button } from './ui/button';
 
 const Sidebar = () => {
   const navItems = [
@@ -47,6 +48,12 @@ const Sidebar = () => {
       </ScrollArea>
       
       <div className="p-4 border-t border-border">
+        <div className="mb-4">
+          <Button variant="outline" className="w-full flex items-center gap-2">
+            <LogInIcon className="h-4 w-4" />
+            <span>Connect</span>
+          </Button>
+        </div>
         <div className="flex items-center justify-between">
           <div className="text-xs text-sidebar-foreground/60">
             Web3 SOC v1.0.0
