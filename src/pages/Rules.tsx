@@ -25,14 +25,26 @@ import RuleStatistics from '@/components/rules/RuleStatistics';
 import RecentRuleActivity from '@/components/rules/RecentRuleActivity';
 import RuleFilters from '@/components/rules/RuleFilters';
 
+// Define the Rule type to match what RuleList expects
+type Rule = {
+  id: string;
+  name: string;
+  description: string;
+  severity: 'critical' | 'high' | 'medium' | 'low';
+  category: string;
+  status: 'active' | 'paused' | 'disabled';
+  created: string;
+  triggers: number;
+}
+
 const Rules = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [severityFilter, setSeverityFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all-status');
   const [dialogOpen, setDialogOpen] = useState(false);
   
-  // Mock rules data
-  const rules = [
+  // Mock rules data with properly typed severity values
+  const rules: Rule[] = [
     {
       id: '1',
       name: 'High Value Transfer',

@@ -13,6 +13,7 @@ interface RuleStatsProps {
     status: string;
     triggers: number;
     name: string;
+    severity?: 'critical' | 'high' | 'medium' | 'low';
   }>;
 }
 
