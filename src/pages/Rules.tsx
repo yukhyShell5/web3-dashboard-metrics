@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   Dialog, 
@@ -7,7 +7,10 @@ import {
   DialogHeader, 
   DialogTitle, 
   DialogTrigger, 
-  DialogDescription 
+  DialogDescription,
+  DialogPortal,
+  DialogOverlay,
+  DialogClose
 } from '@/components/ui/dialog';
 import { 
   Card, 
@@ -56,6 +59,16 @@ const Rules = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedRule, setSelectedRule] = useState<Rule | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Reset processing state when dialogs close
+  useEffect(() => {
+    if (!dialogOpen && !editDialogOpen && !deleteDialogOpen) {
+      setTimeout(() => {
+        setIsProcessing(false);
+      }, 100);
+    }
+  }, [dialogOpen, editDialogOpen, deleteDialogOpen]);
   
   // Mock rules data with properly typed severity values
   const [rules, setRules] = useState<Rule[]>([
@@ -131,6 +144,9 @@ const Rules = () => {
 
   const handleCreateRule = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isProcessing) return;
+    setIsProcessing(true);
+    
     const formData = new FormData(e.currentTarget);
     
     // Check if a rule with the same name already exists
@@ -143,6 +159,7 @@ const Rules = () => {
         description: "Une règle avec ce nom existe déjà. Veuillez choisir un nom différent.",
         variant: "destructive",
       });
+      setIsProcessing(false);
       return;
     }
     
@@ -159,18 +176,27 @@ const Rules = () => {
     };
     
     setRules([...rules, newRule]);
-    setDialogOpen(false);
     
-    toast({
-      title: "Règle créée",
-      description: `La règle "${newRule.name}" a été créée avec succès.`,
-    });
+    // Close dialog with a slight delay
+    setTimeout(() => {
+      setDialogOpen(false);
+      
+      toast({
+        title: "Règle créée",
+        description: `La règle "${newRule.name}" a été créée avec succès.`,
+      });
+    }, 100);
   };
 
   const handleEditRule = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isProcessing) return;
+    setIsProcessing(true);
     
-    if (!selectedRule) return;
+    if (!selectedRule) {
+      setIsProcessing(false);
+      return;
+    }
     
     const formData = new FormData(e.currentTarget);
     const ruleName = formData.get('name') as string;
@@ -187,6 +213,7 @@ const Rules = () => {
         description: "Une règle avec ce nom existe déjà. Veuillez choisir un nom différent.",
         variant: "destructive",
       });
+      setIsProcessing(false);
       return;
     }
     
@@ -205,16 +232,27 @@ const Rules = () => {
     });
     
     setRules(updatedRules);
-    setEditDialogOpen(false);
-    setSelectedRule(null);
     
-    toast({
-      title: "Règle modifiée",
-      description: `La règle "${ruleName}" a été modifiée avec succès.`,
-    });
+    // Close dialog with a slight delay
+    setTimeout(() => {
+      setEditDialogOpen(false);
+      
+      toast({
+        title: "Règle modifiée",
+        description: `La règle "${ruleName}" a été modifiée avec succès.`,
+      });
+      
+      // Reset selected rule after a delay
+      setTimeout(() => {
+        setSelectedRule(null);
+      }, 100);
+    }, 100);
   };
 
   const handleDuplicateRule = (rule: Rule) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    
     const newRule: Rule = {
       ...rule,
       id: (rules.length + 1).toString(),
@@ -229,9 +267,16 @@ const Rules = () => {
       title: "Règle dupliquée",
       description: `La règle "${rule.name}" a été dupliquée avec succès.`,
     });
+    
+    setTimeout(() => {
+      setIsProcessing(false);
+    }, 100);
   };
 
   const handleToggleRuleStatus = (rule: Rule) => {
+    if (isProcessing) return;
+    setIsProcessing(true);
+    
     const updatedRules = rules.map(r => {
       if (r.id === rule.id) {
         const newStatus = r.status === 'active' ? 'paused' : 'active';
@@ -247,60 +292,47 @@ const Rules = () => {
       title: `Règle ${statusAction}`,
       description: `La règle "${rule.name}" a été ${statusAction} avec succès.`,
     });
+    
+    setTimeout(() => {
+      setIsProcessing(false);
+    }, 100);
   };
 
   const handleDeleteRule = () => {
-    if (!selectedRule) return;
+    if (isProcessing || !selectedRule) return;
+    setIsProcessing(true);
     
     const updatedRules = rules.filter(rule => rule.id !== selectedRule.id);
     setRules(updatedRules);
-    setDeleteDialogOpen(false);
-    setSelectedRule(null);
     
-    toast({
-      title: "Règle supprimée",
-      description: `La règle "${selectedRule.name}" a été supprimée avec succès.`,
-    });
+    const ruleName = selectedRule.name;
+    
+    // Close dialog with a slight delay
+    setTimeout(() => {
+      setDeleteDialogOpen(false);
+      
+      toast({
+        title: "Règle supprimée",
+        description: `La règle "${ruleName}" a été supprimée avec succès.`,
+      });
+      
+      // Reset selected rule after a delay
+      setTimeout(() => {
+        setSelectedRule(null);
+      }, 100);
+    }, 100);
   };
 
   const openEditDialog = (rule: Rule) => {
+    if (isProcessing) return;
     setSelectedRule(rule);
     setEditDialogOpen(true);
   };
 
   const openDeleteDialog = (rule: Rule) => {
+    if (isProcessing) return;
     setSelectedRule(rule);
     setDeleteDialogOpen(true);
-  };
-
-  const handleDialogOpenChange = (open: boolean) => {
-    if (!open) {
-      setTimeout(() => {
-        setDialogOpen(open);
-      }, 50);
-    } else {
-      setDialogOpen(open);
-    }
-  };
-
-  const handleEditDialogOpenChange = (open: boolean) => {
-    if (!open) {
-      setTimeout(() => {
-        setEditDialogOpen(open);
-      }, 50);
-    } else {
-      setEditDialogOpen(open);
-    }
-  };
-
-  const handleDeleteDialogOpenChange = (open: boolean) => {
-    if (!open) {
-      setTimeout(() => {
-        setDeleteDialogOpen(open);
-      }, 50);
-    } else {
-      setDeleteDialogOpen(open);
-    }
   };
 
   return (
@@ -310,9 +342,12 @@ const Rules = () => {
           <h1 className="text-3xl font-bold">Alert Rules</h1>
           <p className="text-muted-foreground">Configure detection rules for blockchain activity</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={handleDialogOpenChange}>
+        <Dialog open={dialogOpen} onOpenChange={(open) => {
+          if (isProcessing && !open) return;
+          setDialogOpen(open);
+        }}>
           <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2" disabled={isProcessing}>
               <PlusIcon className="h-4 w-4" />
               Create Rule
             </Button>
@@ -362,7 +397,10 @@ const Rules = () => {
       </div>
 
       {/* Edit Rule Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={handleEditDialogOpenChange}>
+      <Dialog open={editDialogOpen} onOpenChange={(open) => {
+        if (isProcessing && !open) return;
+        setEditDialogOpen(open);
+      }}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>Edit Alert Rule</DialogTitle>
@@ -380,7 +418,10 @@ const Rules = () => {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={handleDeleteDialogOpenChange}>
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
+        if (isProcessing && !open) return;
+        setDeleteDialogOpen(open);
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
@@ -389,8 +430,12 @@ const Rules = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteRule} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogCancel disabled={isProcessing}>Annuler</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteRule} 
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={isProcessing}
+            >
               Supprimer
             </AlertDialogAction>
           </AlertDialogFooter>
