@@ -37,6 +37,17 @@ export interface Webhook {
   active: boolean;
 }
 
+export interface Rule {
+  name: string;
+  file: string;
+  description: string;
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'unknown';
+  category: string;
+  status: 'active' | 'inactive' | 'error';
+  triggers?: number;
+  created?: string;
+}
+
 // API pour les adresses surveillées
 export const addressesApi = {
   getWatchedAddresses: async (): Promise<{ watched_addresses: WatchedAddress[] }> => {
@@ -259,7 +270,6 @@ export const webhooksApi = {
         await handleApiError(response);
       }
 
-      // Vérifiez que le content-type est bien un PDF
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/pdf')) {
         throw new Error('La réponse n\'est pas un PDF valide');
@@ -290,6 +300,126 @@ export const webhooksApi = {
     } catch (error) {
       console.error("Erreur lors de la récupération des alertes:", error);
       return [];
+    }
+  }
+};
+
+// API pour les règles de détection
+export const rulesApi = {
+  getRules: async (): Promise<{ rules: Rule[] }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/rules`);
+      
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error("Erreur lors de la récupération des règles:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les règles de détection",
+        variant: "destructive",
+      });
+      return { rules: [] };
+    }
+  },
+
+  toggleRule: async (ruleName: string, active: boolean): Promise<void> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/rules/${ruleName}/toggle`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ active }),
+      });
+      
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+    } catch (error) {
+      console.error(`Erreur lors de la ${active ? 'activation' : 'désactivation'} de la règle:`, error);
+      throw error;
+    }
+  },
+
+  getRuleStats: async (): Promise<{ [key: string]: number }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/rules/stats`);
+      
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error("Erreur lors de la récupération des statistiques des règles:", error);
+      return {};
+    }
+  },
+
+  createRule: async (ruleData: {
+    name: string;
+    description: string;
+    severity: string;
+    category: string;
+    code: string;
+  }): Promise<Rule> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/rules`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(ruleData),
+      });
+      
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error("Erreur lors de la création de la règle:", error);
+      throw error;
+    }
+  },
+
+  updateRule: async (ruleName: string, updates: Partial<Rule>): Promise<Rule> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/rules/${ruleName}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updates),
+      });
+      
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour de la règle:", error);
+      throw error;
+    }
+  },
+
+  deleteRule: async (ruleName: string): Promise<void> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/rules/${ruleName}`, {
+        method: "DELETE",
+      });
+      
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+    } catch (error) {
+      console.error("Erreur lors de la suppression de la règle:", error);
+      throw error;
     }
   }
 };

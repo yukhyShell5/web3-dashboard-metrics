@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   Dialog, 
@@ -16,86 +15,83 @@ import {
   CardHeader, 
   CardTitle 
 } from '@/components/ui/card';
-import { PlusIcon } from 'lucide-react';
+import { PlusIcon, RefreshCwIcon } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
+import { rulesApi } from '@/services/apiService';
 
-// Import our new components
+// Import our components
 import RuleList from '@/components/rules/RuleList';
 import RuleCreateForm from '@/components/rules/RuleCreateForm';
 import RuleStatistics from '@/components/rules/RuleStatistics';
 import RecentRuleActivity from '@/components/rules/RecentRuleActivity';
 import RuleFilters from '@/components/rules/RuleFilters';
 
-// Define the Rule type to match what RuleList expects
-type Rule = {
+// Extended UI Rule type that includes all required properties
+type UIRule = {
   id: string;
   name: string;
   description: string;
-  severity: 'critical' | 'high' | 'medium' | 'low';
+  severity: 'critical' | 'high' | 'medium' | 'low' | 'unknown';
   category: string;
-  status: 'active' | 'paused' | 'disabled';
-  created: string;
+  status: 'active' | 'inactive' | 'error' | 'paused' | 'disabled';
   triggers: number;
-}
+  created: string;
+};
 
 const Rules = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [severityFilter, setSeverityFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all-status');
   const [dialogOpen, setDialogOpen] = useState(false);
-  
-  // Mock rules data with properly typed severity values
-  const rules: Rule[] = [
-    {
-      id: '1',
-      name: 'High Value Transfer',
-      description: 'Alert on transfers over 100 ETH',
-      severity: 'high',
-      category: 'transaction',
-      status: 'active',
-      created: '2023-07-15T10:30:00Z',
-      triggers: 24,
-    },
-    {
-      id: '2',
-      name: 'Smart Contract Interaction',
-      description: 'Alert when specific addresses interact with flagged contracts',
-      severity: 'medium',
-      category: 'smart-contract',
-      status: 'active',
-      created: '2023-07-20T11:45:00Z',
-      triggers: 56,
-    },
-    {
-      id: '3',
-      name: 'MEV Detection',
-      description: 'Detect potential MEV activity in transactions',
-      severity: 'critical',
-      category: 'transaction',
-      status: 'paused',
-      created: '2023-07-25T15:20:00Z',
-      triggers: 17,
-    },
-    {
-      id: '4',
-      name: 'Gas Anomaly',
-      description: 'Alert on unusual gas price patterns',
-      severity: 'low',
-      category: 'gas',
-      status: 'active',
-      created: '2023-08-01T09:10:00Z',
-      triggers: 42,
-    },
-    {
-      id: '5',
-      name: 'New Contract Deployment',
-      description: 'Alert when monitored addresses deploy new contracts',
-      severity: 'medium',
-      category: 'smart-contract',
-      status: 'active',
-      created: '2023-08-05T13:25:00Z',
-      triggers: 8,
-    },
-  ];
+  const [rules, setRules] = useState<UIRule[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Convert API Rule to UI Rule with all required fields
+  const convertToUIRule = (apiRule: any): UIRule => ({
+    id: apiRule.name || 'unknown-id', // Use name as id if no id is provided
+    name: apiRule.name || 'Unnamed Rule',
+    description: apiRule.description || 'No description available',
+    severity: apiRule.severity || 'medium',
+    category: apiRule.category || 'other',
+    status: apiRule.status || 'inactive',
+    triggers: apiRule.triggers || 0, // Default to 0 if not provided
+    created: apiRule.created || new Date().toISOString(), // Default to now if not provided
+  });
+
+  // Load rules from API
+  const loadRules = async () => {
+    try {
+      setIsLoading(true);
+      const response = await rulesApi.getRules();
+      const uiRules = response.rules?.map(convertToUIRule) || [];
+      setRules(uiRules);
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de charger les règles",
+        variant: "destructive",
+      });
+      console.error("Error loading rules:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Refresh rules
+  const handleRefresh = async () => {
+    try {
+      setIsRefreshing(true);
+      await loadRules();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Initial load
+  useEffect(() => {
+    loadRules();
+  }, []);
 
   // Apply filters
   const filteredRules = rules.filter(rule => {
@@ -115,37 +111,86 @@ const Rules = () => {
     return matchesSearch && matchesSeverity && matchesStatus;
   });
 
-  const handleCreateRule = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleCreateRule = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    console.log('Creating new rule:', Object.fromEntries(formData));
-    setDialogOpen(false);
+    const ruleData = Object.fromEntries(formData);
+    
+    try {
+      await rulesApi.createRule({
+        name: ruleData.name as string,
+        description: ruleData.description as string,
+        severity: ruleData.severity as string,
+        category: ruleData.category as string,
+        code: ruleData.code as string
+      });
+      
+      toast({
+        title: "Succès",
+        description: "La règle a été créée avec succès",
+        variant: "default",
+      });
+      
+      setDialogOpen(false);
+      await loadRules();
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Échec de la création de la règle",
+        variant: "destructive",
+      });
+      console.error("Error creating rule:", error);
+    }
+  };
+
+  const handleToggleRule = async (ruleName: string, active: boolean) => {
+    try {
+      await rulesApi.toggleRule(ruleName, active);
+      await loadRules();
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: `Échec de la ${active ? 'activation' : 'désactivation'} de la règle`,
+        variant: "destructive",
+      });
+      console.error("Error toggling rule:", error);
+    }
   };
 
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Alert Rules</h1>
-          <p className="text-muted-foreground">Configure detection rules for blockchain activity</p>
+          <h1 className="text-3xl font-bold">Règles d'Alerte</h1>
+          <p className="text-muted-foreground">Configurez les règles de détection pour l'activité blockchain</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <PlusIcon className="h-4 w-4" />
-              Create Rule
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]">
-            <DialogHeader>
-              <DialogTitle>Create New Alert Rule</DialogTitle>
-              <DialogDescription>
-                Configure when and how alerts are triggered for monitored addresses
-              </DialogDescription>
-            </DialogHeader>
-            <RuleCreateForm onSubmit={handleCreateRule} />
-          </DialogContent>
-        </Dialog>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+          >
+            <RefreshCwIcon className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Actualiser
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <PlusIcon className="h-4 w-4" />
+                Créer une Règle
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]">
+              <DialogHeader>
+                <DialogTitle>Créer une Nouvelle Règle d'Alerte</DialogTitle>
+                <DialogDescription>
+                  Configurez quand et comment les alertes sont déclenchées pour les adresses surveillées
+                </DialogDescription>
+              </DialogHeader>
+              <RuleCreateForm onSubmit={handleCreateRule} />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <RuleFilters 
@@ -157,22 +202,33 @@ const Rules = () => {
         setStatusFilter={setStatusFilter}
       />
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Alert Rules</CardTitle>
-          <CardDescription>
-            Rules that trigger alerts based on blockchain activity
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <RuleList rules={filteredRules} />
-        </CardContent>
-      </Card>
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      ) : (
+        <>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle>Règles d'Alerte</CardTitle>
+              <CardDescription>
+                Règles qui déclenchent des alertes basées sur l'activité blockchain
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RuleList 
+                rules={filteredRules} 
+                onToggleRule={handleToggleRule} 
+              />
+            </CardContent>
+          </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <RuleStatistics rules={rules} />
-        <RecentRuleActivity />
-      </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <RuleStatistics rules={filteredRules} />
+            <RecentRuleActivity />
+          </div>
+        </>
+      )}
     </div>
   );
 };
