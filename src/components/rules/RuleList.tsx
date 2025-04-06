@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Table, 
@@ -31,17 +32,16 @@ type Rule = {
   description: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
   category: string;
-  status: 'active' | 'inactive' | 'error' | 'paused' | 'disabled';
+  status: 'active' | 'paused' | 'disabled';
   created: string;
   triggers: number;
 }
 
 interface RuleListProps {
   rules: Rule[];
-  onToggleRule: (ruleName: string, active: boolean) => void;
 }
 
-const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
+const RuleList: React.FC<RuleListProps> = ({ rules }) => {
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
       case 'critical':
