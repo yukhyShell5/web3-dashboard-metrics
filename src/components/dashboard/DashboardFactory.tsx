@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback } from 'react';
 import { useDashboardStore } from '@/services/dashboardService';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
@@ -145,7 +144,7 @@ const DashboardFactory = () => {
             data={mockChartData.line}
             xDataKey="day"
             height={150}
-            lines={[{ dataKey: 'value', stroke: '#8b5cf6', name: 'Value', type: 'monotone', fill: '#8b5cf680' }]}
+            lines={[{ dataKey: 'value', stroke: '#8b5cf6', name: 'Value', fill: '#8b5cf680' }]}
           />
         );
       default:

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -31,12 +32,23 @@ type UIRule = {
   id: string;
   name: string;
   description: string;
-  severity: 'critical' | 'high' | 'medium' | 'low' | 'unknown';
+  severity: 'critical' | 'high' | 'medium' | 'low';
   category: string;
   status: 'active' | 'inactive' | 'error' | 'paused' | 'disabled';
   triggers: number;
   created: string;
 };
+
+// Modified RuleStatProps to match UIRule severity
+interface RuleStatProps {
+  rules: Array<{
+    id: string;
+    status: string;
+    triggers: number;
+    name: string;
+    severity?: 'critical' | 'high' | 'medium' | 'low';
+  }>;
+}
 
 const Rules = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -48,16 +60,25 @@ const Rules = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Convert API Rule to UI Rule with all required fields
-  const convertToUIRule = (apiRule: any): UIRule => ({
-    id: apiRule.name || 'unknown-id', // Use name as id if no id is provided
-    name: apiRule.name || 'Unnamed Rule',
-    description: apiRule.description || 'No description available',
-    severity: apiRule.severity || 'medium',
-    category: apiRule.category || 'other',
-    status: apiRule.status || 'inactive',
-    triggers: apiRule.triggers || 0, // Default to 0 if not provided
-    created: apiRule.created || new Date().toISOString(), // Default to now if not provided
-  });
+  const convertToUIRule = (apiRule: any): UIRule => {
+    // Ensure severity is one of the allowed values
+    let severity: 'critical' | 'high' | 'medium' | 'low' = 'medium'; // Default
+    if (apiRule.severity === 'critical' || apiRule.severity === 'high' || 
+        apiRule.severity === 'medium' || apiRule.severity === 'low') {
+      severity = apiRule.severity;
+    }
+    
+    return {
+      id: apiRule.name || 'unknown-id', // Use name as id if no id is provided
+      name: apiRule.name || 'Unnamed Rule',
+      description: apiRule.description || 'No description available',
+      severity: severity,
+      category: apiRule.category || 'other',
+      status: apiRule.status || 'inactive',
+      triggers: apiRule.triggers || 0, // Default to 0 if not provided
+      created: apiRule.created || new Date().toISOString(), // Default to now if not provided
+    };
+  };
 
   // Load rules from API
   const loadRules = async () => {
@@ -157,6 +178,15 @@ const Rules = () => {
     }
   };
 
+  // Cast filtered rules to RuleStatProps rules when passing to RuleStatistics
+  const statsRules: RuleStatProps['rules'] = filteredRules.map(rule => ({
+    id: rule.id,
+    status: rule.status,
+    triggers: rule.triggers,
+    name: rule.name,
+    severity: rule.severity
+  }));
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -224,7 +254,7 @@ const Rules = () => {
           </Card>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <RuleStatistics rules={filteredRules} />
+            <RuleStatistics rules={statsRules} />
             <RecentRuleActivity />
           </div>
         </>
