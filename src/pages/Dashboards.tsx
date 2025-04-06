@@ -5,9 +5,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SearchIcon, EditIcon, EyeIcon, StarIcon, PlusIcon } from 'lucide-react';
+import { SearchIcon, EditIcon, EyeIcon, StarIcon } from 'lucide-react';
 import { useDashboardStore } from '@/services/dashboardStore';
 import { DashboardLayout } from '@/types/dashboard';
+import DashboardFactory from '@/components/dashboard/DashboardFactory';
 import { toast } from "@/hooks/use-toast";
 
 const Dashboards = () => {
@@ -67,17 +68,6 @@ const Dashboards = () => {
     navigate(`/dashboards/edit/${dashboardId}`);
   };
 
-  const handleCreateDashboard = () => {
-    const addDashboard = useDashboardStore.getState().addDashboard;
-    const id = addDashboard({
-      title: 'New Dashboard',
-      description: 'Click to edit dashboard details',
-      isPrimary: dashboards.length === 0, // Make it primary if it's the first dashboard
-    });
-    
-    navigate(`/dashboards/edit/${id}`);
-  };
-
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -85,10 +75,7 @@ const Dashboards = () => {
           <h1 className="text-3xl font-bold">Dashboards</h1>
           <p className="text-muted-foreground">Create and manage custom dashboards</p>
         </div>
-        <Button onClick={handleCreateDashboard} className="flex items-center gap-2">
-          <PlusIcon className="h-4 w-4" />
-          Create Dashboard
-        </Button>
+        <DashboardFactory />
       </div>
 
       <div className="flex items-center space-x-2">
@@ -174,10 +161,7 @@ const Dashboards = () => {
         {sortedDashboards.length === 0 && (
           <div className="col-span-full flex flex-col items-center justify-center p-8 border border-dashed rounded-lg">
             <p className="text-muted-foreground mb-4">No dashboards found</p>
-            <Button onClick={handleCreateDashboard} className="flex items-center gap-2">
-              <PlusIcon className="h-4 w-4" />
-              Create Dashboard
-            </Button>
+            <DashboardFactory />
           </div>
         )}
       </div>
