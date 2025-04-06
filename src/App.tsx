@@ -11,6 +11,8 @@ import Dashboards from "./pages/Dashboards";
 import Rules from "./pages/Rules";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import DashboardView from "./components/dashboard/DashboardView";
+import DashboardEdit from "./components/dashboard/DashboardEdit";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +26,8 @@ const App = () => (
           <Route path="/" element={<Layout><Home /></Layout>} />
           <Route path="/analytics" element={<Layout><Analytics /></Layout>} />
           <Route path="/dashboards" element={<Layout><Dashboards /></Layout>} />
+          <Route path="/dashboards/view/:id" element={<Layout><DashboardView /></Layout>} />
+          <Route path="/dashboards/edit/:id" element={<Layout><DashboardEdit /></Layout>} />
           <Route path="/rules" element={<Layout><Rules /></Layout>} />
           <Route path="/settings" element={<Layout><Settings /></Layout>} />
           <Route path="*" element={<NotFound />} />

@@ -1,104 +1,71 @@
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { PlusIcon, LayoutDashboardIcon, LineChartIcon, BarChart2Icon, PieChartIcon, AreaChartIcon, SearchIcon, MoveIcon, ArrowUpIcon, ArrowDownIcon, EditIcon, TrashIcon } from 'lucide-react';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-import { Dashboard, useDashboardStore } from '@/services/dashboardService';
-
-// Mock data for chart templates
-const chartTemplates = [
-  { id: 'chart1', type: 'bar', title: 'Transactions by Address', icon: <BarChart2Icon className="h-6 w-6" /> },
-  { id: 'chart2', type: 'line', title: 'Alert Trend', icon: <LineChartIcon className="h-6 w-6" /> },
-  { id: 'chart3', type: 'pie', title: 'Distribution by Chain', icon: <PieChartIcon className="h-6 w-6" /> },
-  { id: 'chart4', type: 'area', title: 'Gas Usage Over Time', icon: <AreaChartIcon className="h-6 w-6" /> },
-  { id: 'chart5', type: 'bar', title: 'Smart Contract Calls', icon: <BarChart2Icon className="h-6 w-6" /> },
-  { id: 'chart6', type: 'line', title: 'Value Transfer', icon: <LineChartIcon className="h-6 w-6" /> },
-];
+import { SearchIcon, EditIcon, EyeIcon, StarIcon } from 'lucide-react';
+import { DashboardLayout, useDashboardStore } from '@/services/dashboardStore';
+import DashboardFactory from '@/components/dashboard/DashboardFactory';
+import { toast } from "@/hooks/use-toast";
 
 const Dashboards = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('recent');
+  
   const dashboards = useDashboardStore(state => state.dashboards);
   const setPrimaryDashboard = useDashboardStore(state => state.setPrimaryDashboard);
-  const [selectedCharts, setSelectedCharts] = useState<string[]>([]);
-  const [layoutItems, setLayoutItems] = useState<{id: string, type: string, title: string, content: React.ReactNode}[]>([]);
-  const [isEditing, setIsEditing] = useState(false);
-  const [newDashboardData, setNewDashboardData] = useState({
-    title: '',
-    description: '',
-    isPrimary: false
-  });
-
-  const handleAddChart = (chartId: string) => {
-    if (!selectedCharts.includes(chartId)) {
-      setSelectedCharts([...selectedCharts, chartId]);
-      
-      // Find the chart template
-      const chartTemplate = chartTemplates.find(chart => chart.id === chartId);
-      if (chartTemplate) {
-        // Add to layout items
-        setLayoutItems([...layoutItems, {
-          id: `layout-${Date.now()}-${chartId}`,
-          type: chartTemplate.type,
-          title: chartTemplate.title,
-          content: chartTemplate.icon
-        }]);
-      }
-    }
-  };
-
-  const handleRemoveChart = (chartId: string) => {
-    setSelectedCharts(selectedCharts.filter(id => id !== chartId));
-  };
-
-  const onDragEnd = (result: any) => {
-    if (!result.destination) return;
-    
-    if (result.type === 'dashboards') {
-      const items = Array.from(dashboards);
-      const [reorderedItem] = items.splice(result.source.index, 1);
-      items.splice(result.destination.index, 0, reorderedItem);
-      // Update dashboards order if needed
-    } else if (result.type === 'layout-items') {
-      const items = [...layoutItems];
-      const [reorderedItem] = items.splice(result.source.index, 1);
-      items.splice(result.destination.index, 0, reorderedItem);
-      setLayoutItems(items);
-    }
-  };
-
-  const handleCreateDashboard = () => {
-    const addDashboard = useDashboardStore.getState().addDashboard;
-    
-    addDashboard({
-      title: newDashboardData.title || 'Untitled Dashboard',
-      description: newDashboardData.description || 'No description provided',
-      charts: layoutItems.length,
-      isPrimary: newDashboardData.isPrimary,
-      layout: layoutItems.map(item => ({
-        id: item.id,
-        type: item.type as any,
-        title: item.title
-      }))
-    });
-    
-    // Reset form
-    setNewDashboardData({ title: '', description: '', isPrimary: false });
-    setSelectedCharts([]);
-    setLayoutItems([]);
-    setIsEditing(false);
-  };
-
+  const removeDashboard = useDashboardStore(state => state.removeDashboard);
+  
+  // Filter dashboards based on search query
   const filteredDashboards = dashboards.filter(dashboard => 
     dashboard.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     dashboard.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  
+  // Sort dashboards based on selected criteria
+  const sortedDashboards = [...filteredDashboards].sort((a, b) => {
+    switch (sortBy) {
+      case 'recent':
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      case 'created':
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case 'name':
+        return a.title.localeCompare(b.title);
+      case 'widgets':
+        return (b.widgets?.length || 0) - (a.widgets?.length || 0);
+      default:
+        return 0;
+    }
+  });
+  
+  const handleSetPrimary = (dashboardId: string) => {
+    setPrimaryDashboard(dashboardId);
+    toast({
+      title: "Primary dashboard updated",
+      description: "This dashboard will now appear on the home page"
+    });
+  };
+  
+  const handleDeleteDashboard = (dashboardId: string) => {
+    if (confirm("Are you sure you want to delete this dashboard?")) {
+      removeDashboard(dashboardId);
+      toast({
+        title: "Dashboard deleted",
+        description: "The dashboard has been permanently removed"
+      });
+    }
+  };
+  
+  const handleViewDashboard = (dashboardId: string) => {
+    navigate(`/dashboards/view/${dashboardId}`);
+  };
+  
+  const handleEditDashboard = (dashboardId: string) => {
+    navigate(`/dashboards/edit/${dashboardId}`);
+  };
 
   return (
     <div className="space-y-8">
@@ -107,176 +74,7 @@ const Dashboards = () => {
           <h1 className="text-3xl font-bold">Dashboards</h1>
           <p className="text-muted-foreground">Create and manage custom dashboards</p>
         </div>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <PlusIcon className="h-4 w-4" />
-              Create Dashboard
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[80%] max-h-[90vh]">
-            <DialogHeader>
-              <DialogTitle>Create New Dashboard</DialogTitle>
-              <DialogDescription>
-                Design a custom dashboard with the charts and metrics you need.
-              </DialogDescription>
-            </DialogHeader>
-
-            <Tabs defaultValue="details" className="w-full h-full">
-              <TabsList className="grid grid-cols-3 mb-4">
-                <TabsTrigger value="details">Dashboard Details</TabsTrigger>
-                <TabsTrigger value="charts">Add Charts</TabsTrigger>
-                <TabsTrigger value="layout">Layout Designer</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="details" className="space-y-4">
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="name" className="text-right">
-                      Name
-                    </Label>
-                    <Input 
-                      id="name" 
-                      placeholder="Dashboard name" 
-                      className="col-span-3"
-                      value={newDashboardData.title}
-                      onChange={(e) => setNewDashboardData({...newDashboardData, title: e.target.value})}
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="description" className="text-right">
-                      Description
-                    </Label>
-                    <Input 
-                      id="description" 
-                      placeholder="Brief description" 
-                      className="col-span-3" 
-                      value={newDashboardData.description}
-                      onChange={(e) => setNewDashboardData({...newDashboardData, description: e.target.value})}
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="primary" className="text-right">
-                      Set as primary
-                    </Label>
-                    <div className="col-span-3">
-                      <p className="text-sm text-muted-foreground">
-                        If checked, this dashboard will appear on the home page.
-                      </p>
-                      <input 
-                        type="checkbox" 
-                        id="primary" 
-                        className="mt-2"
-                        checked={newDashboardData.isPrimary}
-                        onChange={(e) => setNewDashboardData({...newDashboardData, isPrimary: e.target.checked})}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="charts" className="space-y-4">
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {chartTemplates.map((chart) => (
-                    <Card 
-                      key={chart.id} 
-                      className={`cursor-pointer transition-all ${selectedCharts.includes(chart.id) ? 'ring-2 ring-primary' : ''}`}
-                      onClick={() => selectedCharts.includes(chart.id) ? handleRemoveChart(chart.id) : handleAddChart(chart.id)}
-                    >
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          {chart.icon}
-                          {chart.title}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-xs text-muted-foreground">{chart.type} chart</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </TabsContent>
-
-              <TabsContent value="layout" className="h-[60vh] overflow-auto">
-                <div className="flex flex-col h-full">
-                  <div className="bg-muted/50 p-4 mb-4 rounded-lg">
-                    <p className="font-medium mb-2">Dashboard Layout Editor</p>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Drag and drop charts to create your perfect dashboard layout. Panels can be resized.
-                    </p>
-                    {selectedCharts.length === 0 && (
-                      <div className="text-center p-4 border border-dashed rounded-lg">
-                        <p>Select charts from the "Add Charts" tab first</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {selectedCharts.length > 0 && (
-                    <DragDropContext onDragEnd={onDragEnd}>
-                      <Droppable droppableId="layout-items" direction="vertical" type="layout-items">
-                        {(provided) => (
-                          <div 
-                            {...provided.droppableProps} 
-                            ref={provided.innerRef}
-                            className="flex-1"
-                          >
-                            <ResizablePanelGroup direction="vertical" className="min-h-[500px]">
-                              {layoutItems.map((item, index) => (
-                                <Draggable key={item.id} draggableId={item.id} index={index}>
-                                  {(provided) => (
-                                    <div
-                                      ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                      className="mb-4"
-                                    >
-                                      <ResizablePanel defaultSize={20}>
-                                        <Card className="h-full">
-                                          <CardHeader className="pb-2">
-                                            <div className="flex justify-between items-center">
-                                              <CardTitle className="text-base">{item.title}</CardTitle>
-                                              <div className="flex gap-1">
-                                                <Button 
-                                                  variant="ghost" 
-                                                  size="icon" 
-                                                  className="h-6 w-6"
-                                                  {...provided.dragHandleProps}
-                                                >
-                                                  <MoveIcon className="h-4 w-4" />
-                                                </Button>
-                                              </div>
-                                            </div>
-                                          </CardHeader>
-                                          <CardContent className="flex items-center justify-center h-40">
-                                            <div className="text-muted-foreground">
-                                              {item.content}
-                                            </div>
-                                          </CardContent>
-                                        </Card>
-                                      </ResizablePanel>
-                                      {index < layoutItems.length - 1 && (
-                                        <ResizableHandle />
-                                      )}
-                                    </div>
-                                  )}
-                                </Draggable>
-                              ))}
-                              {provided.placeholder}
-                            </ResizablePanelGroup>
-                          </div>
-                        )}
-                      </Droppable>
-                    </DragDropContext>
-                  )}
-                </div>
-              </TabsContent>
-            </Tabs>
-            
-            <DialogFooter className="mt-4">
-              <Button variant="outline" onClick={() => setIsEditing(false)}>Cancel</Button>
-              <Button type="submit" onClick={handleCreateDashboard}>Create Dashboard</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <DashboardFactory />
       </div>
 
       <div className="flex items-center space-x-2">
@@ -289,7 +87,7 @@ const Dashboards = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <Select defaultValue="recent">
+        <Select value={sortBy} onValueChange={setSortBy}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Sort by" />
           </SelectTrigger>
@@ -297,80 +95,75 @@ const Dashboards = () => {
             <SelectItem value="recent">Recently Updated</SelectItem>
             <SelectItem value="created">Date Created</SelectItem>
             <SelectItem value="name">Name</SelectItem>
-            <SelectItem value="charts">Number of Charts</SelectItem>
+            <SelectItem value="widgets">Number of Widgets</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <DragDropContext onDragEnd={onDragEnd}>
-        <Droppable droppableId="dashboards" type="dashboards">
-          {(provided) => (
-            <div 
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-            >
-              {filteredDashboards.map((dashboard, index) => (
-                <Draggable key={dashboard.id} draggableId={dashboard.id} index={index}>
-                  {(provided) => (
-                    <div
-                      ref={provided.innerRef}
-                      {...provided.draggableProps}
-                    >
-                      <Card className="hover:shadow-md transition-shadow">
-                        <CardHeader className="pb-2">
-                          <div className="flex items-center justify-between">
-                            <CardTitle>{dashboard.title}</CardTitle>
-                            <div className="flex items-center" {...provided.dragHandleProps}>
-                              <MoveIcon className="h-4 w-4 text-muted-foreground cursor-move" />
-                            </div>
-                          </div>
-                          <CardDescription>{dashboard.description}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex items-center justify-between text-sm">
-                            <div className="text-muted-foreground flex items-center gap-1">
-                              {dashboard.charts} charts
-                            </div>
-                            <div className="text-muted-foreground">
-                              Updated {new Date(dashboard.updatedAt).toLocaleDateString()}
-                            </div>
-                          </div>
-                          {dashboard.isPrimary && (
-                            <div className="mt-2 text-xs bg-primary/20 text-primary rounded-full px-2 py-1 inline-flex items-center">
-                              <span>Primary Dashboard</span>
-                            </div>
-                          )}
-                        </CardContent>
-                        <CardFooter className="pt-2 justify-between">
-                          <div>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className={`${dashboard.isPrimary ? 'text-primary' : ''}`}
-                              onClick={() => setPrimaryDashboard(dashboard.id)}
-                              disabled={dashboard.isPrimary}
-                            >
-                              {dashboard.isPrimary ? 'Primary' : 'Set as primary'}
-                            </Button>
-                          </div>
-                          <div className="flex gap-1">
-                            <Button variant="outline" size="icon" className="h-8 w-8">
-                              <EditIcon className="h-4 w-4" />
-                            </Button>
-                            <Button variant="default" size="sm">View</Button>
-                          </div>
-                        </CardFooter>
-                      </Card>
-                    </div>
-                  )}
-                </Draggable>
-              ))}
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {sortedDashboards.map((dashboard: DashboardLayout) => (
+          <Card key={dashboard.id} className="hover:shadow-md transition-shadow">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle>{dashboard.title}</CardTitle>
+                {dashboard.isPrimary && (
+                  <StarIcon className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                )}
+              </div>
+              <CardDescription>{dashboard.description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between text-sm">
+                <div className="text-muted-foreground flex items-center gap-1">
+                  {dashboard.widgets?.length || 0} widgets
+                </div>
+                <div className="text-muted-foreground">
+                  Updated {new Date(dashboard.updatedAt).toLocaleDateString()}
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="pt-2 justify-between">
+              <div>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={`${dashboard.isPrimary ? 'text-primary' : ''}`}
+                  onClick={() => handleSetPrimary(dashboard.id)}
+                  disabled={dashboard.isPrimary}
+                >
+                  {dashboard.isPrimary ? 'Primary' : 'Set as primary'}
+                </Button>
+              </div>
+              <div className="flex gap-1">
+                <Button 
+                  variant="outline" 
+                  size="icon" 
+                  className="h-8 w-8"
+                  onClick={() => handleEditDashboard(dashboard.id)}
+                >
+                  <EditIcon className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="default" 
+                  size="sm"
+                  onClick={() => handleViewDashboard(dashboard.id)}
+                  className="flex items-center gap-1"
+                >
+                  <EyeIcon className="h-4 w-4" />
+                  View
+                </Button>
+              </div>
+            </CardFooter>
+          </Card>
+        ))}
+        
+        {sortedDashboards.length === 0 && (
+          <div className="col-span-full flex flex-col items-center justify-center p-8 border border-dashed rounded-lg">
+            <p className="text-muted-foreground mb-4">No dashboards found</p>
+            <DashboardFactory />
+          </div>
+        )}
+      </div>
     </div>
   );
 };
