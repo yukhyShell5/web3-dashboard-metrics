@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Widget as WidgetType } from '@/types/dashboard';
 import BarChart from '@/components/charts/BarChart';
 import LineChart from '@/components/charts/LineChart';
 import PieChart from '@/components/charts/PieChart';
-import { StatCard } from '@/components/StatCard';
+import StatCard from '@/components/StatCard';
 
 // Mock data for charts
 const mockData = {
@@ -62,7 +61,7 @@ const Widget: React.FC<WidgetProps> = ({
             data={mockData.bar}
             xDataKey="name"
             height={widget.position.h * 50}
-            bars={[{ dataKey: 'value', name: 'Value', stroke: widget.config.colorScheme?.[0] || '#3b82f6' }]}
+            bars={[{ dataKey: 'value', name: 'Value', fill: widget.config.colorScheme?.[0] || '#3b82f6' }]}
           />
         );
       case 'line':
@@ -90,8 +89,11 @@ const Widget: React.FC<WidgetProps> = ({
           <StatCard
             title={widget.title}
             value={value}
-            trend={widget.config.trend}
-            trendDirection={widget.config.trendDirection === 'up' ? 'up' : 'down'}
+            icon={null}
+            change={widget.config.trend ? {
+              value: parseFloat(widget.config.trend?.replace('%', '')),
+              positive: widget.config.trendDirection === 'up'
+            } : undefined}
           />
         );
       default:

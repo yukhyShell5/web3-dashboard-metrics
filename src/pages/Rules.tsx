@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -26,12 +27,15 @@ import RuleStatistics from '@/components/rules/RuleStatistics';
 import RecentRuleActivity from '@/components/rules/RecentRuleActivity';
 import RuleFilters from '@/components/rules/RuleFilters';
 
+// Define the accepted severity types
+type RuleSeverity = 'critical' | 'high' | 'medium' | 'low';
+
 // Extended UI Rule type that includes all required properties
 type UIRule = {
   id: string;
   name: string;
   description: string;
-  severity: 'critical' | 'high' | 'medium' | 'low' | 'unknown';
+  severity: RuleSeverity;
   category: string;
   status: 'active' | 'inactive' | 'error' | 'paused' | 'disabled';
   triggers: number;
@@ -48,16 +52,24 @@ const Rules = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Convert API Rule to UI Rule with all required fields
-  const convertToUIRule = (apiRule: any): UIRule => ({
-    id: apiRule.name || 'unknown-id', // Use name as id if no id is provided
-    name: apiRule.name || 'Unnamed Rule',
-    description: apiRule.description || 'No description available',
-    severity: apiRule.severity || 'medium',
-    category: apiRule.category || 'other',
-    status: apiRule.status || 'inactive',
-    triggers: apiRule.triggers || 0, // Default to 0 if not provided
-    created: apiRule.created || new Date().toISOString(), // Default to now if not provided
-  });
+  const convertToUIRule = (apiRule: any): UIRule => {
+    // Validate the severity value to ensure it's one of the allowed values
+    let severity: RuleSeverity = 'medium'; // Default value
+    if (['critical', 'high', 'medium', 'low'].includes(apiRule.severity)) {
+      severity = apiRule.severity as RuleSeverity;
+    }
+    
+    return {
+      id: apiRule.name || 'unknown-id', // Use name as id if no id is provided
+      name: apiRule.name || 'Unnamed Rule',
+      description: apiRule.description || 'No description available',
+      severity: severity,
+      category: apiRule.category || 'other',
+      status: apiRule.status || 'inactive',
+      triggers: apiRule.triggers || 0, // Default to 0 if not provided
+      created: apiRule.created || new Date().toISOString(), // Default to now if not provided
+    };
+  };
 
   // Load rules from API
   const loadRules = async () => {

@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SearchIcon, EditIcon, EyeIcon, StarIcon } from 'lucide-react';
-import { DashboardLayout, useDashboardStore } from '@/services/dashboardStore';
+import { useDashboardStore } from '@/services/dashboardStore';
+import { DashboardLayout } from '@/types/dashboard';
 import DashboardFactory from '@/components/dashboard/DashboardFactory';
 import { toast } from "@/hooks/use-toast";
 
