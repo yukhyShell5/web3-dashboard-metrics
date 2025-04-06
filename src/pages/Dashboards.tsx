@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,13 +19,11 @@ const Dashboards = () => {
   const setPrimaryDashboard = useDashboardStore(state => state.setPrimaryDashboard);
   const removeDashboard = useDashboardStore(state => state.removeDashboard);
   
-  // Filter dashboards based on search query
   const filteredDashboards = dashboards.filter(dashboard => 
     dashboard.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     dashboard.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
-  // Sort dashboards based on selected criteria
   const sortedDashboards = [...filteredDashboards].sort((a, b) => {
     switch (sortBy) {
       case 'recent':

@@ -54,7 +54,7 @@ const Sidebar = () => {
             <span>Connect</span>
           </Button>
         </div>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-center">
           <div className="text-xs text-sidebar-foreground/60">
             Web3 SOC v1.0.0
           </div>
