@@ -10,7 +10,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PlusIcon, TrashIcon, PencilIcon } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
-import { webhooksApi } from '@/services/apiService';
+import { webhooksApi, notificationApi } from '@/services/apiService';
 
 interface Webhook {
   id: number;
@@ -18,6 +18,14 @@ interface Webhook {
   url: string;
   type: string;
   active: boolean;
+}
+
+interface NotificationSettings {
+  critical: boolean;
+  high: boolean;
+  medium: boolean;
+  low: boolean;
+  info: boolean;
 }
 
 const NotificationsTab = () => {
@@ -30,11 +38,25 @@ const NotificationsTab = () => {
     active: true
   });
   const [isEditMode, setIsEditMode] = useState(false);
+  const [notificationSettings, setNotificationSettings] = useState<NotificationSettings>({
+    critical: true,
+    high: true,
+    medium: true,
+    low: false,
+    info: false
+  });
 
   // Requête pour obtenir les webhooks
   const { data: webhooks, isLoading: isLoadingWebhooks } = useQuery<Webhook[]>({
     queryKey: ['webhooks'],
     queryFn: () => webhooksApi.getWebhooks().then(res => res.webhooks)
+  });
+
+  // Requête pour obtenir les paramètres de notification
+  useQuery<NotificationSettings>({
+    queryKey: ['notificationSettings'],
+    queryFn: () => notificationApi.getNotificationSettings(),
+    onSuccess: (data) => setNotificationSettings(data)
   });
 
   // Mutation pour créer un nouveau webhook
@@ -115,7 +137,25 @@ const NotificationsTab = () => {
       });
     }
   });
-  
+
+  // Mutation pour mettre à jour les paramètres de notification
+  const updateSettingsMutation = useMutation({
+    mutationFn: (settings: NotificationSettings) => 
+      notificationApi.updateNotificationSettings(settings),
+    onSuccess: () => {
+      toast({
+        title: "Paramètres enregistrés",
+        description: "Les préférences de notification ont été mises à jour.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la mise à jour des paramètres.",
+        variant: "destructive",
+      });
+    }
+  });
 
   const handleOpenAddDialog = () => {
     setIsEditMode(false);
@@ -160,6 +200,15 @@ const NotificationsTab = () => {
 
   const handleTestWebhook = (id: number) => {
     testWebhookMutation.mutate(id);
+  };
+
+  const handleSeverityToggle = (severity: keyof NotificationSettings, checked: boolean) => {
+    const newSettings = {
+      ...notificationSettings,
+      [severity]: checked
+    };
+    setNotificationSettings(newSettings);
+    updateSettingsMutation.mutate(newSettings);
   };
 
   return (
@@ -351,35 +400,55 @@ const NotificationsTab = () => {
                 <Badge className="bg-red-500/20 text-red-500">critique</Badge>
                 <span>Alertes critiques</span>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={notificationSettings.critical}
+                onCheckedChange={(checked) => handleSeverityToggle('critical', checked)}
+                disabled={updateSettingsMutation.isPending}
+              />
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Badge className="bg-orange-500/20 text-orange-500">haute</Badge>
                 <span>Alertes haute sévérité</span>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={notificationSettings.high}
+                onCheckedChange={(checked) => handleSeverityToggle('high', checked)}
+                disabled={updateSettingsMutation.isPending}
+              />
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Badge className="bg-yellow-500/20 text-yellow-500">moyenne</Badge>
                 <span>Alertes moyenne sévérité</span>
               </div>
-              <Switch defaultChecked />
+              <Switch 
+                checked={notificationSettings.medium}
+                onCheckedChange={(checked) => handleSeverityToggle('medium', checked)}
+                disabled={updateSettingsMutation.isPending}
+              />
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Badge className="bg-blue-500/20 text-blue-500">basse</Badge>
                 <span>Alertes basse sévérité</span>
               </div>
-              <Switch />
+              <Switch 
+                checked={notificationSettings.low}
+                onCheckedChange={(checked) => handleSeverityToggle('low', checked)}
+                disabled={updateSettingsMutation.isPending}
+              />
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Badge className="bg-green-500/20 text-green-500">info</Badge>
                 <span>Alertes informatives</span>
               </div>
-              <Switch />
+              <Switch 
+                checked={notificationSettings.info}
+                onCheckedChange={(checked) => handleSeverityToggle('info', checked)}
+                disabled={updateSettingsMutation.isPending}
+              />
             </div>
           </div>
         </CardContent>

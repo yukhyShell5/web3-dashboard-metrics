@@ -48,6 +48,54 @@ export interface Rule {
   created?: string;
 }
 
+export interface NotificationSettings {
+  critical: boolean;
+  high: boolean;
+  medium: boolean;
+  low: boolean;
+  info: boolean;
+}
+
+export const notificationApi = {
+  getNotificationSettings: async (): Promise<NotificationSettings> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/notification-settings`);
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching notification settings:", error);
+      return {
+        critical: true,
+        high: true,
+        medium: true,
+        low: false,
+        info: false
+      };
+    }
+  },
+
+  updateNotificationSettings: async (settings: NotificationSettings): Promise<void> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/notification-settings`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(settings),
+      });
+      
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+    } catch (error) {
+      console.error("Error updating notification settings:", error);
+      throw error;
+    }
+  }
+};
+
 // API pour les adresses surveillées
 export const addressesApi = {
   getWatchedAddresses: async (): Promise<{ watched_addresses: WatchedAddress[] }> => {
