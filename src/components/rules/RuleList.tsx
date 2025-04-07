@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Table, 
@@ -102,21 +103,24 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
   const handleToggleRule = async (rule: Rule) => {
     if (!onToggleRule) return;
     
-    const isActivating = rule.status !== 'active';
+    // Le statut actif est quand status="active", sinon on considère qu'elle est désactivée
+    const isCurrentlyActive = rule.status === 'active';
+    // Pour activer, on passe active=true, pour désactiver active=false
+    const shouldActivate = !isCurrentlyActive;
     
     try {
-      await onToggleRule(rule.name, isActivating);
+      await onToggleRule(rule.name, shouldActivate);
       
       toast({
-        title: isActivating ? "Règle activée" : "Règle désactivée",
-        description: `La règle "${rule.name}" a été ${isActivating ? 'activée' : 'désactivée'} avec succès.`,
+        title: shouldActivate ? "Règle activée" : "Règle désactivée",
+        description: `La règle "${rule.name}" a été ${shouldActivate ? 'activée' : 'désactivée'} avec succès.`,
         variant: "default",
       });
     } catch (error) {
       console.error("Error toggling rule:", error);
       toast({
         title: "Erreur",
-        description: `Échec de ${isActivating ? "l'activation" : "la désactivation"} de la règle "${rule.name}".`,
+        description: `Échec de ${shouldActivate ? "l'activation" : "la désactivation"} de la règle "${rule.name}".`,
         variant: "destructive",
       });
     }

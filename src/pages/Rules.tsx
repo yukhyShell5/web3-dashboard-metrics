@@ -159,12 +159,15 @@ const Rules = () => {
     try {
       setIsLoading(true);
       await rulesApi.toggleRule(ruleName, active);
+      
       toast({
         title: active ? "Règle activée" : "Règle désactivée",
         description: `La règle "${ruleName}" a été ${active ? 'activée' : 'désactivée'} avec succès.`,
         variant: "default",
       });
-      await loadRules(); // Reload rules to update status
+      
+      // Recharger les règles pour obtenir l'état mis à jour
+      await loadRules();
     } catch (error) {
       toast({
         title: "Erreur",
