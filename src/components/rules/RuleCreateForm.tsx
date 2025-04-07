@@ -58,6 +58,7 @@ const RuleCreateForm: React.FC<RuleCreateFormProps> = ({ onSubmit }) => {
             <SelectItem value="transaction">Transaction</SelectItem>
             <SelectItem value="smart-contract">Smart Contract</SelectItem>
             <SelectItem value="gas">Gas</SelectItem>
+            <SelectItem value="governance">Governance</SelectItem>
           </SelectContent>
         </Select>
       </div>
