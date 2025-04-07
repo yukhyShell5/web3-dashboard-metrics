@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   Table, 
@@ -108,7 +109,7 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
       await onToggleRule(rule.name, !isCurrentlyActive);
       
       toast({
-        title: "Règle activée" if !isCurrentlyActive else "Règle désactivée",
+        title: !isCurrentlyActive ? "Règle activée" : "Règle désactivée",
         description: `La règle "${rule.name}" a été ${!isCurrentlyActive ? 'activée' : 'désactivée'} avec succès.`,
         variant: "default",
       });
