@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Table, 
@@ -103,24 +102,21 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
   const handleToggleRule = async (rule: Rule) => {
     if (!onToggleRule) return;
     
-    // Le statut actif est quand status="active", sinon on considère qu'elle est désactivée
     const isCurrentlyActive = rule.status === 'active';
-    // Pour activer, on passe active=true, pour désactiver active=false
-    const shouldActivate = !isCurrentlyActive;
     
     try {
-      await onToggleRule(rule.name, shouldActivate);
+      await onToggleRule(rule.name, !isCurrentlyActive);
       
       toast({
-        title: shouldActivate ? "Règle activée" : "Règle désactivée",
-        description: `La règle "${rule.name}" a été ${shouldActivate ? 'activée' : 'désactivée'} avec succès.`,
+        title: "Règle activée" if !isCurrentlyActive else "Règle désactivée",
+        description: `La règle "${rule.name}" a été ${!isCurrentlyActive ? 'activée' : 'désactivée'} avec succès.`,
         variant: "default",
       });
     } catch (error) {
       console.error("Error toggling rule:", error);
       toast({
         title: "Erreur",
-        description: `Échec de ${shouldActivate ? "l'activation" : "la désactivation"} de la règle "${rule.name}".`,
+        description: `Échec de ${!isCurrentlyActive ? "l'activation" : "la désactivation"} de la règle "${rule.name}".`,
         variant: "destructive",
       });
     }
@@ -168,7 +164,7 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
                     <DropdownMenuItem>Edit</DropdownMenuItem>
                     <DropdownMenuItem>Duplicate</DropdownMenuItem>
                     <DropdownMenuItem 
-                      onClick={() => onToggleRule && handleToggleRule(rule)}
+                      onClick={() => handleToggleRule(rule)}
                     >
                       {rule.status === 'active' ? 'Désactiver' : 'Activer'}
                     </DropdownMenuItem>

@@ -376,6 +376,8 @@ export const rulesApi = {
 
   toggleRule: async (ruleName: string, active: boolean): Promise<void> => {
     try {
+      console.log(`Envoi de la requête pour ${active ? 'activer' : 'désactiver'} la règle ${ruleName}`);
+      
       const response = await fetch(`${API_BASE_URL}/rules/${ruleName}/toggle`, {
         method: "POST",
         headers: {
@@ -388,6 +390,7 @@ export const rulesApi = {
         await handleApiError(response);
       }
       
+      console.log("Réponse du serveur:", await response.json());
       return;
     } catch (error) {
       console.error(`Erreur lors de la ${active ? 'activation' : 'désactivation'} de la règle:`, error);

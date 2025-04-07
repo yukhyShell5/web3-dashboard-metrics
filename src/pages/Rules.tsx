@@ -58,13 +58,25 @@ const Rules = () => {
       severity = apiRule.severity as RuleSeverity;
     }
     
+    // Conversion du statut de l'API au format de l'UI
+    // Dans l'API: 'active', 'inactive', 'error'
+    // Dans l'UI: 'active', 'paused', 'disabled'
+    let uiStatus: 'active' | 'paused' | 'disabled' = 'disabled';
+    if (apiRule.status === 'active') {
+      uiStatus = 'active';
+    } else if (apiRule.status === 'error') {
+      uiStatus = 'paused';
+    } else {
+      uiStatus = 'disabled';
+    }
+    
     return {
       id: apiRule.name || 'unknown-id', // Use name as id if no id is provided
       name: apiRule.name || 'Unnamed Rule',
       description: apiRule.description || 'No description available',
       severity: severity,
       category: apiRule.category || 'other',
-      status: apiRule.status || 'inactive',
+      status: uiStatus,
       triggers: apiRule.triggers || 0, // Default to 0 if not provided
       created: apiRule.created || new Date().toISOString(), // Default to now if not provided
     };
@@ -75,7 +87,9 @@ const Rules = () => {
     try {
       setIsLoading(true);
       const response = await rulesApi.getRules();
+      console.log("Rules from API:", response.rules);
       const uiRules = response.rules?.map(convertToUIRule) || [];
+      console.log("UI Rules after conversion:", uiRules);
       setRules(uiRules);
     } catch (error) {
       toast({
@@ -158,6 +172,9 @@ const Rules = () => {
   const handleToggleRule = async (ruleName: string, active: boolean) => {
     try {
       setIsLoading(true);
+      
+      console.log(`Basculement de la règle ${ruleName} vers ${active ? 'active' : 'inactive'}`);
+      
       await rulesApi.toggleRule(ruleName, active);
       
       toast({
@@ -166,7 +183,7 @@ const Rules = () => {
         variant: "default",
       });
       
-      // Recharger les règles pour obtenir l'état mis à jour
+      // Recharger les règles pour obtenir l'état mis à jour du backend
       await loadRules();
     } catch (error) {
       toast({
