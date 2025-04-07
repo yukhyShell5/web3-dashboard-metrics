@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Table, 
@@ -25,6 +24,7 @@ import {
   BookIcon,
   InfoIcon
 } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
 
 type Rule = {
   id: string;
@@ -39,9 +39,10 @@ type Rule = {
 
 interface RuleListProps {
   rules: Rule[];
+  onToggleRule?: (ruleName: string, active: boolean) => Promise<void>;
 }
 
-const RuleList: React.FC<RuleListProps> = ({ rules }) => {
+const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
       case 'critical':
@@ -98,6 +99,29 @@ const RuleList: React.FC<RuleListProps> = ({ rules }) => {
     }
   };
 
+  const handleToggleRule = async (rule: Rule) => {
+    if (!onToggleRule) return;
+    
+    const isActivating = rule.status !== 'active';
+    
+    try {
+      await onToggleRule(rule.name, isActivating);
+      
+      toast({
+        title: isActivating ? "Règle activée" : "Règle désactivée",
+        description: `La règle "${rule.name}" a été ${isActivating ? 'activée' : 'désactivée'} avec succès.`,
+        variant: "default",
+      });
+    } catch (error) {
+      console.error("Error toggling rule:", error);
+      toast({
+        title: "Erreur",
+        description: `Échec de ${isActivating ? "l'activation" : "la désactivation"} de la règle "${rule.name}".`,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <Table>
       <TableHeader>
@@ -139,8 +163,10 @@ const RuleList: React.FC<RuleListProps> = ({ rules }) => {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem>Edit</DropdownMenuItem>
                     <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                    <DropdownMenuItem>
-                      {rule.status === 'active' ? 'Pause' : 'Activate'}
+                    <DropdownMenuItem 
+                      onClick={() => onToggleRule && handleToggleRule(rule)}
+                    >
+                      {rule.status === 'active' ? 'Désactiver' : 'Activer'}
                     </DropdownMenuItem>
                     <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
                   </DropdownMenuContent>

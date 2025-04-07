@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -37,7 +36,7 @@ type UIRule = {
   description: string;
   severity: RuleSeverity;
   category: string;
-  status: 'active' | 'inactive' | 'error' | 'paused' | 'disabled';
+  status: 'active' | 'paused' | 'disabled';
   triggers: number;
   created: string;
 };
@@ -155,17 +154,26 @@ const Rules = () => {
     }
   };
 
+  // Toggle rule status (active/inactive)
   const handleToggleRule = async (ruleName: string, active: boolean) => {
     try {
+      setIsLoading(true);
       await rulesApi.toggleRule(ruleName, active);
-      await loadRules();
+      toast({
+        title: active ? "Règle activée" : "Règle désactivée",
+        description: `La règle "${ruleName}" a été ${active ? 'activée' : 'désactivée'} avec succès.`,
+        variant: "default",
+      });
+      await loadRules(); // Reload rules to update status
     } catch (error) {
       toast({
         title: "Erreur",
-        description: `Échec de la ${active ? 'activation' : 'désactivation'} de la règle`,
+        description: `Échec de ${active ? 'l\'activation' : 'la désactivation'} de la règle "${ruleName}".`,
         variant: "destructive",
       });
       console.error("Error toggling rule:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 

@@ -387,6 +387,8 @@ export const rulesApi = {
       if (!response.ok) {
         await handleApiError(response);
       }
+      
+      return;
     } catch (error) {
       console.error(`Erreur lors de la ${active ? 'activation' : 'désactivation'} de la règle:`, error);
       throw error;
