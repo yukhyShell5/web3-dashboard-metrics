@@ -5,7 +5,13 @@ import AlertItem, { AlertItemProps, AlertSeverity } from '@/components/AlertItem
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { SearchIcon, FilterIcon, BellRingIcon } from 'lucide-react';
+import { 
+  SearchIcon, 
+  FilterIcon, 
+  BellRingIcon,
+  ArrowUpIcon,
+  ArrowDownIcon 
+} from 'lucide-react';
 import LineChart from '@/components/charts/LineChart';
 import PieChart from '@/components/charts/PieChart';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -58,6 +64,8 @@ const mockAlerts: AlertItemProps[] = [
 const Analytics = () => {
   const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortField, setSortField] = useState<string>('timestamp');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
   const filteredAlerts = mockAlerts.filter((alert) => {
     const matchesSeverity = selectedSeverity === 'all' || alert.severity === selectedSeverity;
@@ -65,6 +73,55 @@ const Analytics = () => {
                           alert.description.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesSeverity && matchesSearch;
   });
+
+  // Sort the filtered alerts
+  const sortedAlerts = [...filteredAlerts].sort((a, b) => {
+    let comparison = 0;
+    
+    switch (sortField) {
+      case 'title':
+        comparison = a.title.localeCompare(b.title);
+        break;
+      case 'source':
+        comparison = a.source.localeCompare(b.source);
+        break;
+      case 'severity': {
+        // Custom severity order: critical > high > medium > low > info
+        const severityOrder = { critical: 5, high: 4, medium: 3, low: 2, info: 1 };
+        comparison = (severityOrder[a.severity] || 0) - (severityOrder[b.severity] || 0);
+        break;
+      }
+      case 'timestamp':
+        comparison = new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+        break;
+      default:
+        break;
+    }
+    
+    // Reverse comparison if sorting descending
+    return sortDirection === 'asc' ? comparison : -comparison;
+  });
+
+  const handleSort = (field: string) => {
+    if (sortField === field) {
+      // If already sorting by this field, toggle direction
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // If sorting by a new field, default to ascending
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (field: string) => {
+    if (sortField !== field) {
+      return null;
+    }
+    
+    return sortDirection === 'asc' 
+      ? <ArrowUpIcon className="ml-1 h-4 w-4" /> 
+      : <ArrowDownIcon className="ml-1 h-4 w-4" />;
+  };
 
   const alertsByTypeData = [
     { name: 'Suspicious Tx', value: 32 },
@@ -208,16 +265,48 @@ const Analytics = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Alert</TableHead>
-                <TableHead>Source</TableHead>
-                <TableHead>Severity</TableHead>
-                <TableHead>Time</TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort('title')}
+                >
+                  <div className="flex items-center">
+                    Alert
+                    {getSortIcon('title')}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort('source')}
+                >
+                  <div className="flex items-center">
+                    Source
+                    {getSortIcon('source')}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort('severity')}
+                >
+                  <div className="flex items-center">
+                    Severity
+                    {getSortIcon('severity')}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort('timestamp')}
+                >
+                  <div className="flex items-center">
+                    Time
+                    {getSortIcon('timestamp')}
+                  </div>
+                </TableHead>
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredAlerts.length > 0 ? (
-                filteredAlerts.map((alert) => (
+              {sortedAlerts.length > 0 ? (
+                sortedAlerts.map((alert) => (
                   <TableRow key={alert.id}>
                     <TableCell>
                       <div>

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Table, 
   TableBody, 
@@ -23,7 +23,9 @@ import {
   PauseCircleIcon,
   ScrollTextIcon,
   BookIcon,
-  InfoIcon
+  InfoIcon,
+  ArrowUpIcon,
+  ArrowDownIcon
 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 
@@ -43,7 +45,13 @@ interface RuleListProps {
   onToggleRule?: (ruleName: string, active: boolean) => Promise<void>;
 }
 
+type SortField = 'name' | 'category' | 'severity' | 'status' | 'triggers';
+type SortDirection = 'asc' | 'desc';
+
 const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
       case 'critical':
@@ -106,8 +114,6 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
     const isCurrentlyActive = rule.status === 'active';
     
     try {
-      // Pass the opposite of the current status to the toggle function
-      // If active, we want to deactivate (active=false), otherwise activate (active=true)
       await onToggleRule(rule.name, !isCurrentlyActive);
       
       toast({
@@ -125,21 +131,116 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
     }
   };
 
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // If already sorting by this field, toggle direction
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // If sorting by a new field, default to ascending
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return null;
+    }
+    
+    return sortDirection === 'asc' 
+      ? <ArrowUpIcon className="ml-1 h-4 w-4" /> 
+      : <ArrowDownIcon className="ml-1 h-4 w-4" />;
+  };
+
+  // Sort rules based on current sort field and direction
+  const sortedRules = [...rules].sort((a, b) => {
+    let comparison = 0;
+    
+    switch (sortField) {
+      case 'name':
+        comparison = a.name.localeCompare(b.name);
+        break;
+      case 'category':
+        comparison = a.category.localeCompare(b.category);
+        break;
+      case 'severity': {
+        // Custom severity order: critical > high > medium > low
+        const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
+        comparison = (severityOrder[a.severity] || 0) - (severityOrder[b.severity] || 0);
+        break;
+      }
+      case 'status': {
+        // Custom status order: active > paused > disabled
+        const statusOrder = { active: 3, paused: 2, disabled: 1 };
+        comparison = (statusOrder[a.status] || 0) - (statusOrder[b.status] || 0);
+        break;
+      }
+      case 'triggers':
+        comparison = a.triggers - b.triggers;
+        break;
+      default:
+        break;
+    }
+    
+    // Reverse comparison if sorting descending
+    return sortDirection === 'asc' ? comparison : -comparison;
+  });
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Name</TableHead>
-          <TableHead>Category</TableHead>
-          <TableHead>Severity</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead className="text-right">Triggers</TableHead>
+          <TableHead 
+            className="cursor-pointer"
+            onClick={() => handleSort('name')}
+          >
+            <div className="flex items-center">
+              Name
+              {getSortIcon('name')}
+            </div>
+          </TableHead>
+          <TableHead 
+            className="cursor-pointer"
+            onClick={() => handleSort('category')}
+          >
+            <div className="flex items-center">
+              Category
+              {getSortIcon('category')}
+            </div>
+          </TableHead>
+          <TableHead 
+            className="cursor-pointer"
+            onClick={() => handleSort('severity')}
+          >
+            <div className="flex items-center">
+              Severity
+              {getSortIcon('severity')}
+            </div>
+          </TableHead>
+          <TableHead 
+            className="cursor-pointer"
+            onClick={() => handleSort('status')}
+          >
+            <div className="flex items-center">
+              Status
+              {getSortIcon('status')}
+            </div>
+          </TableHead>
+          <TableHead 
+            className="text-right cursor-pointer"
+            onClick={() => handleSort('triggers')}
+          >
+            <div className="flex items-center justify-end">
+              Triggers
+              {getSortIcon('triggers')}
+            </div>
+          </TableHead>
           <TableHead></TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {rules.length > 0 ? (
-          rules.map((rule) => (
+        {sortedRules.length > 0 ? (
+          sortedRules.map((rule) => (
             <TableRow key={rule.id}>
               <TableCell>
                 <div>
