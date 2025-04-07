@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -54,8 +55,8 @@ const Rules = () => {
   const convertToUIRule = (apiRule: any): UIRule => {
     // Validate the severity value to ensure it's one of the allowed values
     let severity: RuleSeverity = 'medium'; // Default value
-    if (['critical', 'high', 'medium', 'low'].includes(apiRule.severity)) {
-      severity = apiRule.severity as RuleSeverity;
+    if (['critical', 'high', 'medium', 'low'].includes(apiRule.severity?.toLowerCase())) {
+      severity = apiRule.severity.toLowerCase() as RuleSeverity;
     }
     
     // Conversion du statut de l'API au format de l'UI
@@ -66,7 +67,7 @@ const Rules = () => {
       uiStatus = 'active';
     } else if (apiRule.status === 'error') {
       uiStatus = 'paused';
-    } else {
+    } else if (apiRule.status === 'inactive') {
       uiStatus = 'disabled';
     }
     
@@ -177,21 +178,13 @@ const Rules = () => {
       
       await rulesApi.toggleRule(ruleName, active);
       
-      toast({
-        title: active ? "Règle activée" : "Règle désactivée",
-        description: `La règle "${ruleName}" a été ${active ? 'activée' : 'désactivée'} avec succès.`,
-        variant: "default",
-      });
-      
       // Recharger les règles pour obtenir l'état mis à jour du backend
       await loadRules();
+      
+      return Promise.resolve();
     } catch (error) {
-      toast({
-        title: "Erreur",
-        description: `Échec de ${active ? 'l\'activation' : 'la désactivation'} de la règle "${ruleName}".`,
-        variant: "destructive",
-      });
       console.error("Error toggling rule:", error);
+      throw error;
     } finally {
       setIsLoading(false);
     }

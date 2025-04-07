@@ -390,7 +390,8 @@ export const rulesApi = {
         await handleApiError(response);
       }
       
-      console.log("Réponse du serveur:", await response.json());
+      const result = await response.json();
+      console.log("Réponse du serveur:", result);
       return;
     } catch (error) {
       console.error(`Erreur lors de la ${active ? 'activation' : 'désactivation'} de la règle:`, error);

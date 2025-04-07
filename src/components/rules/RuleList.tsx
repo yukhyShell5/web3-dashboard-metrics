@@ -106,6 +106,8 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
     const isCurrentlyActive = rule.status === 'active';
     
     try {
+      // Pass the opposite of the current status to the toggle function
+      // If active, we want to deactivate (active=false), otherwise activate (active=true)
       await onToggleRule(rule.name, !isCurrentlyActive);
       
       toast({
