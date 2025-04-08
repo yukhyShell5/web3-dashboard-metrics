@@ -196,7 +196,11 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
           >
             <div className="flex items-center">
               Name
-              {getSortIcon('name')}
+              {sortField === 'name' ? (
+                sortDirection === 'asc' ? <ArrowUpIcon className="ml-1 h-4 w-4" /> : <ArrowDownIcon className="ml-1 h-4 w-4" />
+              ) : (
+                <div className="ml-1 h-4 w-4 opacity-0">•</div>
+              )}
             </div>
           </TableHead>
           <TableHead 
@@ -205,7 +209,11 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
           >
             <div className="flex items-center">
               Category
-              {getSortIcon('category')}
+              {sortField === 'category' ? (
+                sortDirection === 'asc' ? <ArrowUpIcon className="ml-1 h-4 w-4" /> : <ArrowDownIcon className="ml-1 h-4 w-4" />
+              ) : (
+                <div className="ml-1 h-4 w-4 opacity-0">•</div>
+              )}
             </div>
           </TableHead>
           <TableHead 
@@ -214,7 +222,11 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
           >
             <div className="flex items-center">
               Severity
-              {getSortIcon('severity')}
+              {sortField === 'severity' ? (
+                sortDirection === 'asc' ? <ArrowUpIcon className="ml-1 h-4 w-4" /> : <ArrowDownIcon className="ml-1 h-4 w-4" />
+              ) : (
+                <div className="ml-1 h-4 w-4 opacity-0">•</div>
+              )}
             </div>
           </TableHead>
           <TableHead 
@@ -223,7 +235,11 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
           >
             <div className="flex items-center">
               Status
-              {getSortIcon('status')}
+              {sortField === 'status' ? (
+                sortDirection === 'asc' ? <ArrowUpIcon className="ml-1 h-4 w-4" /> : <ArrowDownIcon className="ml-1 h-4 w-4" />
+              ) : (
+                <div className="ml-1 h-4 w-4 opacity-0">•</div>
+              )}
             </div>
           </TableHead>
           <TableHead 
@@ -232,7 +248,11 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
           >
             <div className="flex items-center justify-end">
               Triggers
-              {getSortIcon('triggers')}
+              {sortField === 'triggers' ? (
+                sortDirection === 'asc' ? <ArrowUpIcon className="ml-1 h-4 w-4" /> : <ArrowDownIcon className="ml-1 h-4 w-4" />
+              ) : (
+                <div className="ml-1 h-4 w-4 opacity-0">•</div>
+              )}
             </div>
           </TableHead>
           <TableHead></TableHead>
