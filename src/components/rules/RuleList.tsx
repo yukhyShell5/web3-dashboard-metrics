@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Table, 
   TableBody, 
@@ -38,6 +37,7 @@ type Rule = {
   status: 'active' | 'paused' | 'disabled';
   created: string;
   triggers: number;
+  lastTriggered?: string;
 }
 
 interface RuleListProps {
@@ -51,6 +51,55 @@ type SortDirection = 'asc' | 'desc';
 const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+  const [triggerCounts, setTriggerCounts] = useState<Record<string, {count: number, lastTriggered?: string}>>({});
+
+  // Fetch trigger counts on component mount
+  useEffect(() => {
+    const fetchTriggerCounts = async () => {
+      try {
+        const response = await fetch('http://localhost:8000/api/rule-counters');
+        const data = await response.json();
+        
+        const countsMap = data.reduce((acc, item) => {
+          // Normalise les noms de règles en minuscules pour la correspondance
+          const normalizedRuleName = item.ruleName.toLowerCase();
+          acc[normalizedRuleName] = {
+            count: item.triggerCount,
+            lastTriggered: item.lastTriggered
+          };
+          return acc;
+        }, {});
+        
+        console.log('Fetched trigger counts:', countsMap); // Debug
+        setTriggerCounts(countsMap);
+      } catch (error) {
+        console.error("Failed to fetch trigger counts:", error);
+      }
+    };
+    
+    // Dans la fusion des règles :
+    const rulesWithCounts = rules.map(rule => {
+      const normalizedRuleName = rule.name.toLowerCase();
+      return {
+        ...rule,
+        triggers: triggerCounts[normalizedRuleName]?.count || 0,
+        lastTriggered: triggerCounts[normalizedRuleName]?.lastTriggered
+      };
+    });
+    
+    fetchTriggerCounts();
+    
+    // Set up polling every 30 seconds
+    const interval = setInterval(fetchTriggerCounts, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Merge rules with their trigger counts
+  const rulesWithCounts = rules.map(rule => ({
+    ...rule,
+    triggers: triggerCounts[rule.name]?.count || 0,
+    lastTriggered: triggerCounts[rule.name]?.lastTriggered
+  }));
 
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
@@ -133,27 +182,21 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
-      // If already sorting by this field, toggle direction
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
     } else {
-      // If sorting by a new field, default to ascending
       setSortField(field);
       setSortDirection('asc');
     }
   };
 
   const getSortIcon = (field: SortField) => {
-    if (sortField !== field) {
-      return null;
-    }
-    
+    if (sortField !== field) return null;
     return sortDirection === 'asc' 
       ? <ArrowUpIcon className="ml-1 h-4 w-4" /> 
       : <ArrowDownIcon className="ml-1 h-4 w-4" />;
   };
 
-  // Sort rules based on current sort field and direction
-  const sortedRules = [...rules].sort((a, b) => {
+  const sortedRules = [...rulesWithCounts].sort((a, b) => {
     let comparison = 0;
     
     switch (sortField) {
@@ -164,13 +207,11 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
         comparison = a.category.localeCompare(b.category);
         break;
       case 'severity': {
-        // Custom severity order: critical > high > medium > low
         const severityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
         comparison = (severityOrder[a.severity] || 0) - (severityOrder[b.severity] || 0);
         break;
       }
       case 'status': {
-        // Custom status order: active > paused > disabled
         const statusOrder = { active: 3, paused: 2, disabled: 1 };
         comparison = (statusOrder[a.status] || 0) - (statusOrder[b.status] || 0);
         break;
@@ -182,77 +223,53 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
         break;
     }
     
-    // Reverse comparison if sorting descending
     return sortDirection === 'asc' ? comparison : -comparison;
   });
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'Never';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead 
-            className="cursor-pointer"
-            onClick={() => handleSort('name')}
-          >
+          <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
             <div className="flex items-center">
               Name
-              {sortField === 'name' ? (
-                sortDirection === 'asc' ? <ArrowUpIcon className="ml-1 h-4 w-4" /> : <ArrowDownIcon className="ml-1 h-4 w-4" />
-              ) : (
-                <div className="ml-1 h-4 w-4 opacity-0">•</div>
-              )}
+              {getSortIcon('name') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
             </div>
           </TableHead>
-          <TableHead 
-            className="cursor-pointer"
-            onClick={() => handleSort('category')}
-          >
+          <TableHead className="cursor-pointer" onClick={() => handleSort('category')}>
             <div className="flex items-center">
               Category
-              {sortField === 'category' ? (
-                sortDirection === 'asc' ? <ArrowUpIcon className="ml-1 h-4 w-4" /> : <ArrowDownIcon className="ml-1 h-4 w-4" />
-              ) : (
-                <div className="ml-1 h-4 w-4 opacity-0">•</div>
-              )}
+              {getSortIcon('category') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
             </div>
           </TableHead>
-          <TableHead 
-            className="cursor-pointer"
-            onClick={() => handleSort('severity')}
-          >
+          <TableHead className="cursor-pointer" onClick={() => handleSort('severity')}>
             <div className="flex items-center">
               Severity
-              {sortField === 'severity' ? (
-                sortDirection === 'asc' ? <ArrowUpIcon className="ml-1 h-4 w-4" /> : <ArrowDownIcon className="ml-1 h-4 w-4" />
-              ) : (
-                <div className="ml-1 h-4 w-4 opacity-0">•</div>
-              )}
+              {getSortIcon('severity') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
             </div>
           </TableHead>
-          <TableHead 
-            className="cursor-pointer"
-            onClick={() => handleSort('status')}
-          >
+          <TableHead className="cursor-pointer" onClick={() => handleSort('status')}>
             <div className="flex items-center">
               Status
-              {sortField === 'status' ? (
-                sortDirection === 'asc' ? <ArrowUpIcon className="ml-1 h-4 w-4" /> : <ArrowDownIcon className="ml-1 h-4 w-4" />
-              ) : (
-                <div className="ml-1 h-4 w-4 opacity-0">•</div>
-              )}
+              {getSortIcon('status') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
             </div>
           </TableHead>
-          <TableHead 
-            className="text-right cursor-pointer"
-            onClick={() => handleSort('triggers')}
-          >
+          <TableHead className="text-right cursor-pointer" onClick={() => handleSort('triggers')}>
             <div className="flex items-center justify-end">
               Triggers
-              {sortField === 'triggers' ? (
-                sortDirection === 'asc' ? <ArrowUpIcon className="ml-1 h-4 w-4" /> : <ArrowDownIcon className="ml-1 h-4 w-4" />
-              ) : (
-                <div className="ml-1 h-4 w-4 opacity-0">•</div>
-              )}
+              {getSortIcon('triggers') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
             </div>
           </TableHead>
           <TableHead></TableHead>
@@ -276,7 +293,18 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
               </TableCell>
               <TableCell>{getSeverityBadge(rule.severity)}</TableCell>
               <TableCell>{getStatusBadge(rule.status)}</TableCell>
-              <TableCell className="text-right">{rule.triggers}</TableCell>
+              <TableCell className="text-right">
+                <div className="flex flex-col items-end">
+                  <Badge variant={rule.triggers > 0 ? "default" : "secondary"}>
+                    {rule.triggers} triggers
+                  </Badge>
+                  {rule.triggers > 0 && (
+                    <span className="text-xs text-muted-foreground mt-1">
+                      Last: {formatDate(rule.lastTriggered)}
+                    </span>
+                  )}
+                </div>
+              </TableCell>
               <TableCell>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -287,9 +315,7 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem>Edit</DropdownMenuItem>
                     <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                    <DropdownMenuItem 
-                      onClick={() => handleToggleRule(rule)}
-                    >
+                    <DropdownMenuItem onClick={() => handleToggleRule(rule)}>
                       {rule.status === 'active' ? 'Désactiver' : 'Activer'}
                     </DropdownMenuItem>
                     <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
