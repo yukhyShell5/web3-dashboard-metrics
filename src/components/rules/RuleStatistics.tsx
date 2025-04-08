@@ -33,6 +33,10 @@ const RuleStatistics: React.FC<RuleStatsProps> = ({ rules }) => {
             <div>Paused Rules</div>
             <div className="font-bold">{rules.filter(r => r.status === 'paused').length}</div>
           </div>
+          <div className='flex justify-between items-center'>
+            <div>Disabled Rules</div>
+            <div className="font-bold">{rules.filter(r => r.status === 'disabled').length}</div>
+          </div>
           <div className="flex justify-between items-center">
             <div>Total Triggers (30 days)</div>
             <div className="font-bold">{rules.reduce((acc, rule) => acc + rule.triggers, 0)}</div>
