@@ -242,60 +242,68 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead className="cursor-pointer" onClick={() => handleSort('name')}>
-            <div className="flex items-center">
+          <TableHead className="cursor-pointer text-left" onClick={() => handleSort('name')}>
+            <div className="flex items-center justify-start">
               Name
               {getSortIcon('name') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
             </div>
           </TableHead>
-          <TableHead className="cursor-pointer" onClick={() => handleSort('category')}>
-            <div className="flex items-center">
+          <TableHead className="cursor-pointer text-left" onClick={() => handleSort('category')}>
+            <div className="flex items-center justify-start">
               Category
               {getSortIcon('category') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
             </div>
           </TableHead>
-          <TableHead className="cursor-pointer" onClick={() => handleSort('severity')}>
-            <div className="flex items-center">
+          <TableHead className="cursor-pointer text-center" onClick={() => handleSort('severity')}>
+            <div className="flex items-center justify-center">
               Severity
               {getSortIcon('severity') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
             </div>
           </TableHead>
-          <TableHead className="cursor-pointer" onClick={() => handleSort('status')}>
-            <div className="flex items-center">
+          <TableHead className="cursor-pointer text-center" onClick={() => handleSort('status')}>
+            <div className="flex items-center justify-center">
               Status
               {getSortIcon('status') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
             </div>
           </TableHead>
-          <TableHead className="text-right cursor-pointer" onClick={() => handleSort('triggers')}>
-            <div className="flex items-center justify-end">
+          <TableHead className="cursor-pointer text-center" onClick={() => handleSort('triggers')}>
+            <div className="flex items-center justify-center">
               Triggers
               {getSortIcon('triggers') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
             </div>
           </TableHead>
-          <TableHead></TableHead>
+          <TableHead className="text-center">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {sortedRules.length > 0 ? (
           sortedRules.map((rule) => (
             <TableRow key={rule.id}>
-              <TableCell>
-                <div>
+              <TableCell className="text-left">
+                <div className="flex flex-col items-start">
                   <div className="font-medium">{rule.name}</div>
                   <div className="text-xs text-muted-foreground">{rule.description}</div>
                 </div>
               </TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
+              <TableCell className="text-center">
+                <div className="flex items-center justify-start gap-2">
                   {getCategoryIcon(rule.category)}
                   <span className="capitalize">{rule.category.replace('-', ' ')}</span>
                 </div>
               </TableCell>
-              <TableCell>{getSeverityBadge(rule.severity)}</TableCell>
-              <TableCell>{getStatusBadge(rule.status)}</TableCell>
-              <TableCell className="text-right">
-                <div className="flex flex-col items-end">
-                  <Badge variant={rule.triggers > 0 ? "default" : "secondary"}>
+              <TableCell className="text-center">
+                <div className="flex justify-center">
+                  {getSeverityBadge(rule.severity)}
+                </div>
+              </TableCell>
+              <TableCell className="text-center">
+                <div className="flex justify-center">
+                  {getStatusBadge(rule.status)}
+                </div>
+              </TableCell>
+              <TableCell className="text-center">
+                <div className="flex flex-col items-center">
+                  <Badge variant={rule.triggers > 0 ? "default" : "secondary"} className="mx-auto">
                     {rule.triggers} triggers
                   </Badge>
                   {rule.triggers > 0 && (
@@ -305,10 +313,10 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
                   )}
                 </div>
               </TableCell>
-              <TableCell>
+              <TableCell className="text-center">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
+                    <Button variant="ghost" size="icon" className="mx-auto">
                       <MoreVerticalIcon className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -333,7 +341,7 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
         )}
       </TableBody>
     </Table>
-  );
-};
+  )
+}
 
 export default RuleList;
