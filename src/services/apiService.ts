@@ -477,3 +477,22 @@ export const rulesApi = {
     }
   }
 };
+
+export const getLastTriggeredRules = async (): Promise<Array<{
+  ruleName: string;
+  triggerCount: number;
+  lastTriggered: string;
+}>> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/last-triggered-rules`);
+    
+    if (!response.ok) {
+      await handleApiError(response);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching last triggered rules:", error);
+    return [];
+  }
+};

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { PlusIcon, GlobeIcon } from 'lucide-react';
+import { PlusIcon, GlobeIcon, ShieldAlertIcon  } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
 
 const ApiTab = () => {
@@ -105,6 +105,19 @@ const ApiTab = () => {
                 </div>
               </div>
               <Switch defaultChecked />
+            </div>
+
+            <div className="flex items-center justify-between p-4 border rounded-lg bg-card">
+              <div className="flex items-center gap-4">
+                <div className="p-2 bg-green-500/10 rounded-full">
+                  <ShieldAlertIcon  className="h-6 w-6 text-green-500" />
+                </div>
+                <div>
+                  <div className="font-medium">Forta</div>
+                  <div className="text-sm text-muted-foreground">Real-time threat detection for blockchain</div>
+                </div>
+              </div>
+              <Switch />
             </div>
           </div>
         </CardContent>
