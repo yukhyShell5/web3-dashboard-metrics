@@ -3,6 +3,17 @@ import { toast } from "@/components/ui/use-toast";
 // Remplacez cette URL par l'URL réelle de votre API Python
 const API_BASE_URL = "http://localhost:8000";
 
+export type AlertSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
+
+export interface AlertItemProps {
+  id: string;
+  title: string;
+  description: string;
+  severity: AlertSeverity;
+  timestamp: string;
+  source: string;
+}
+
 async function handleApiError(response: Response) {
   let errorMessage = "Une erreur s'est produite";
   try {
@@ -495,4 +506,27 @@ export const getLastTriggeredRules = async (): Promise<Array<{
     console.error("Error fetching last triggered rules:", error);
     return [];
   }
+};
+
+export const alertsApi = {
+  getAlerts: async (): Promise<any[]> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/alerts`);
+      
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+      
+      const data = await response.json();
+      return data || [];
+    } catch (error) {
+      console.error("Error fetching alerts:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch alerts",
+        variant: "destructive",
+      });
+      return [];
+    }
+  },
 };

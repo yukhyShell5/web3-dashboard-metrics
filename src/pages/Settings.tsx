@@ -9,9 +9,13 @@ import NotificationsTab from '@/components/settings/NotificationsTab';
 import ApiTab from '@/components/settings/ApiTab';
 import GeneralTab from '@/components/settings/GeneralTab';
 import MonitoringHeader from '@/components/settings/MonitoringHeader';
+import { useSearchParams } from 'react-router-dom';
 
 const Settings = () => {
   const [isMonitoring, setIsMonitoring] = useState(false);
+
+  const [searchParams] = useSearchParams();
+  const defaultTab = searchParams.get('tab') || 'addresses';
 
   // Requête pour obtenir le statut de monitoring
   const { data: monitoringStatus, isLoading: isLoadingMonitoring } = useQuery({
@@ -31,7 +35,7 @@ const Settings = () => {
     <div className="space-y-8">
       <MonitoringHeader isMonitoring={isMonitoring} />
 
-      <Tabs defaultValue="addresses" className="w-full">
+      <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList className="grid grid-cols-4 w-full md:w-auto">
           <TabsTrigger value="addresses" className="flex gap-2 items-center">
             <ShieldIcon className="h-4 w-4" />

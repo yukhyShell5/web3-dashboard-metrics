@@ -1,7 +1,5 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import AlertItem, { AlertItemProps, AlertSeverity } from '@/components/AlertItem';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -16,145 +14,28 @@ import LineChart from '@/components/charts/LineChart';
 import PieChart from '@/components/charts/PieChart';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import RecentAlerts from '@/components/analytics/RecentAlerts';
+import { useNavigate } from 'react-router-dom';
 
-// Mock alerts data
-const mockAlerts: AlertItemProps[] = [
-  {
-    id: '1',
-    title: 'Suspicious Transaction Detected',
-    description: 'Large ETH transaction (>100 ETH) from monitored address 0x1a2...3b4c to known exchange.',
-    severity: 'critical',
-    timestamp: '2023-08-10T10:30:00Z',
-    source: 'Ethereum'
-  },
-  {
-    id: '2',
-    title: 'Repeated Failed Transactions',
-    description: 'Multiple failed transactions detected from address 0x4d5...6e7f over the last hour.',
-    severity: 'high',
-    timestamp: '2023-08-10T09:45:00Z',
-    source: 'Polygon'
-  },
-  {
-    id: '3',
-    title: 'Smart Contract Interaction',
-    description: 'Interaction with flagged smart contract 0x7g8...9h0i.',
-    severity: 'medium',
-    timestamp: '2023-08-10T08:15:00Z',
-    source: 'Arbitrum'
-  },
-  {
-    id: '4',
-    title: 'New Address Interaction',
-    description: 'Monitored address 0x1a2...3b4c interacted with a new address 0xb1c...d2e3.',
-    severity: 'low',
-    timestamp: '2023-08-10T07:30:00Z',
-    source: 'Optimism'
-  },
-  {
-    id: '5',
-    title: 'Gas Price Anomaly',
-    description: 'Unusual gas price used for transaction from monitored address.',
-    severity: 'info',
-    timestamp: '2023-08-10T06:15:00Z',
-    source: 'Ethereum'
-  }
+// Mock data for charts
+const alertsByTypeData = [
+  { name: 'Suspicious Tx', value: 32 },
+  { name: 'Failed Tx', value: 18 },
+  { name: 'Smart Contract', value: 22 },
+  { name: 'Address Interaction', value: 14 },
+  { name: 'Gas Anomaly', value: 8 },
+];
+
+const alertsBySeverityData = [
+  { name: 'Critical', value: 12 },
+  { name: 'High', value: 24 },
+  { name: 'Medium', value: 30 },
+  { name: 'Low', value: 18 },
+  { name: 'Info', value: 10 },
 ];
 
 const Analytics = () => {
-  const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState<string>('timestamp');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-
-  const filteredAlerts = mockAlerts.filter((alert) => {
-    const matchesSeverity = selectedSeverity === 'all' || alert.severity === selectedSeverity;
-    const matchesSearch = alert.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          alert.description.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSeverity && matchesSearch;
-  });
-
-  // Sort the filtered alerts
-  const sortedAlerts = [...filteredAlerts].sort((a, b) => {
-    let comparison = 0;
-    
-    switch (sortField) {
-      case 'title':
-        comparison = a.title.localeCompare(b.title);
-        break;
-      case 'source':
-        comparison = a.source.localeCompare(b.source);
-        break;
-      case 'severity': {
-        // Custom severity order: critical > high > medium > low > info
-        const severityOrder = { critical: 5, high: 4, medium: 3, low: 2, info: 1 };
-        comparison = (severityOrder[a.severity] || 0) - (severityOrder[b.severity] || 0);
-        break;
-      }
-      case 'timestamp':
-        comparison = new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
-        break;
-      default:
-        break;
-    }
-    
-    // Reverse comparison if sorting descending
-    return sortDirection === 'asc' ? comparison : -comparison;
-  });
-
-  const handleSort = (field: string) => {
-    if (sortField === field) {
-      // If already sorting by this field, toggle direction
-      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-    } else {
-      // If sorting by a new field, default to ascending
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  const getSortIcon = (field: string) => {
-    if (sortField !== field) {
-      return null;
-    }
-    
-    return sortDirection === 'asc' 
-      ? <ArrowUpIcon className="ml-1 h-4 w-4" /> 
-      : <ArrowDownIcon className="ml-1 h-4 w-4" />;
-  };
-
-  const alertsByTypeData = [
-    { name: 'Suspicious Tx', value: 32 },
-    { name: 'Failed Tx', value: 18 },
-    { name: 'Smart Contract', value: 22 },
-    { name: 'Address Interaction', value: 14 },
-    { name: 'Gas Anomaly', value: 8 },
-  ];
-
-  const alertsBySeverityData = [
-    { name: 'Critical', value: 12 },
-    { name: 'High', value: 24 },
-    { name: 'Medium', value: 30 },
-    { name: 'Low', value: 18 },
-    { name: 'Info', value: 10 },
-  ];
-
-  const getSeverityBadge = (severity: AlertSeverity) => {
-    switch (severity) {
-      case 'critical':
-        return <Badge variant="outline" className="alert-badge-critical">Critical</Badge>;
-      case 'high':
-        return <Badge variant="outline" className="alert-badge-high">High</Badge>;
-      case 'medium':
-        return <Badge variant="outline" className="alert-badge-medium">Medium</Badge>;
-      case 'low':
-        return <Badge variant="outline" className="alert-badge-low">Low</Badge>;
-      case 'info':
-        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Info</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
-    }
-  };
+  const Navigate = useNavigate();
 
   return (
     <div className="space-y-8">
@@ -163,7 +44,7 @@ const Analytics = () => {
           <h1 className="text-3xl font-bold">Analytics & Alerts</h1>
           <p className="text-muted-foreground">Monitor blockchain security events and alerts</p>
         </div>
-        <Button className="flex items-center gap-2" variant="default">
+        <Button className="flex items-center gap-2" variant="default" onClick={() => Navigate('/settings?tab=notifications')}>
           <BellRingIcon className="h-4 w-4" />
           Configure Notifications
         </Button>
@@ -227,118 +108,7 @@ const Analytics = () => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Recent Alerts</CardTitle>
-          <div className="flex items-center space-x-2">
-            <div className="relative flex-1 max-w-sm">
-              <SearchIcon className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search alerts..."
-                className="pl-8"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Select value={selectedSeverity} onValueChange={setSelectedSeverity}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="All severities" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Severities</SelectItem>
-                <SelectItem value="critical">Critical</SelectItem>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
-                <SelectItem value="info">Info</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button variant="outline" size="icon">
-              <FilterIcon className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardDescription className="px-6">
-          Recent security alerts detected on monitored addresses
-        </CardDescription>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead 
-                  className="cursor-pointer"
-                  onClick={() => handleSort('title')}
-                >
-                  <div className="flex items-center">
-                    Alert
-                    {getSortIcon('title')}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer"
-                  onClick={() => handleSort('source')}
-                >
-                  <div className="flex items-center">
-                    Source
-                    {getSortIcon('source')}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer"
-                  onClick={() => handleSort('severity')}
-                >
-                  <div className="flex items-center">
-                    Severity
-                    {getSortIcon('severity')}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer"
-                  onClick={() => handleSort('timestamp')}
-                >
-                  <div className="flex items-center">
-                    Time
-                    {getSortIcon('timestamp')}
-                  </div>
-                </TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedAlerts.length > 0 ? (
-                sortedAlerts.map((alert) => (
-                  <TableRow key={alert.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{alert.title}</div>
-                        <div className="text-xs text-muted-foreground">{alert.description}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{alert.source}</Badge>
-                    </TableCell>
-                    <TableCell>{getSeverityBadge(alert.severity)}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {new Date(alert.timestamp).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="sm">
-                        View details
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
-                    No alerts match your filters
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <RecentAlerts />
     </div>
   );
 };
