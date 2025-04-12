@@ -1,41 +1,92 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { 
-  SearchIcon, 
-  FilterIcon, 
   BellRingIcon,
-  ArrowUpIcon,
-  ArrowDownIcon 
 } from 'lucide-react';
 import LineChart from '@/components/charts/LineChart';
 import PieChart from '@/components/charts/PieChart';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import RecentAlerts from '@/components/analytics/RecentAlerts';
 import { useNavigate } from 'react-router-dom';
-
-// Mock data for charts
-const alertsByTypeData = [
-  { name: 'Suspicious Tx', value: 32 },
-  { name: 'Failed Tx', value: 18 },
-  { name: 'Smart Contract', value: 22 },
-  { name: 'Address Interaction', value: 14 },
-  { name: 'Gas Anomaly', value: 8 },
-];
-
-const alertsBySeverityData = [
-  { name: 'Critical', value: 12 },
-  { name: 'High', value: 24 },
-  { name: 'Medium', value: 30 },
-  { name: 'Low', value: 18 },
-  { name: 'Info', value: 10 },
-];
+import { alertsApi } from '@/services/apiService';
 
 const Analytics = () => {
-  const Navigate = useNavigate();
+  const navigate = useNavigate();
+  const [alertsByTypeData, setAlertsByTypeData] = useState([]);
+  const [alertsBySeverityData, setAlertsBySeverityData] = useState([]);
+  const [timelineData, setTimelineData] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAlertData = async () => {
+      try {
+        // Récupérer les alertes depuis l'API
+        const alerts = await alertsApi.getAlerts();
+        
+        // Traiter les données pour le graphique par type
+        const typeCounts = alerts.reduce((acc, alert) => {
+          acc[alert.alert_type] = (acc[alert.alert_type] || 0) + 1;
+          return acc;
+        }, {});
+        
+        const typeData = Object.entries(typeCounts).map(([name, value]) => ({
+          name,
+          value
+        }));
+        
+        // Traiter les données pour le graphique par sévérité
+        const severityCounts = alerts.reduce((acc, alert) => {
+          acc[alert.severity] = (acc[alert.severity] || 0) + 1;
+          return acc;
+        }, {});
+        
+        const severityData = Object.entries(severityCounts).map(([name, value]) => ({
+          name: name.charAt(0).toUpperCase() + name.slice(1),
+          value
+        }));
+        
+        // Traiter les données pour la timeline (groupées par heure)
+        const timeline = alerts.reduce((acc, alert) => {
+          const date = new Date(alert.date);
+          const hour = `${date.getHours()}:00`;
+          
+          if (!acc[hour]) {
+            acc[hour] = {
+              critical: 0,
+              high: 0,
+              medium: 0,
+              low: 0,
+              info: 0
+            };
+          }
+          
+          const severity = alert.severity.toLowerCase();
+          acc[hour][severity]++;
+          
+          return acc;
+        }, {});
+        
+        const timelineFormatted = Object.entries(timeline).map(([time, counts]) => ({
+          time,
+          ...counts
+        })).sort((a, b) => a.time.localeCompare(b.time));
+        
+        setAlertsByTypeData(typeData);
+        setAlertsBySeverityData(severityData);
+        setTimelineData(timelineFormatted);
+        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching alert data:", error);
+        setLoading(false);
+      }
+    };
+
+    fetchAlertData();
+  }, []);
+
+  if (loading) {
+    return <div>Loading analytics data...</div>;
+  }
 
   return (
     <div className="space-y-8">
@@ -44,7 +95,7 @@ const Analytics = () => {
           <h1 className="text-3xl font-bold">Analytics & Alerts</h1>
           <p className="text-muted-foreground">Monitor blockchain security events and alerts</p>
         </div>
-        <Button className="flex items-center gap-2" variant="default" onClick={() => Navigate('/settings?tab=notifications')}>
+        <Button className="flex items-center gap-2" variant="default" onClick={() => navigate('/settings?tab=notifications')}>
           <BellRingIcon className="h-4 w-4" />
           Configure Notifications
         </Button>
@@ -88,14 +139,7 @@ const Analytics = () => {
         </CardHeader>
         <CardContent>
           <LineChart 
-            data={[
-              { time: '00:00', critical: 2, high: 3, medium: 5, low: 8, info: 4 },
-              { time: '04:00', critical: 1, high: 2, medium: 4, low: 6, info: 3 },
-              { time: '08:00', critical: 3, high: 4, medium: 6, low: 10, info: 5 },
-              { time: '12:00', critical: 2, high: 3, medium: 7, low: 9, info: 6 },
-              { time: '16:00', critical: 4, high: 5, medium: 8, low: 12, info: 7 },
-              { time: '20:00', critical: 3, high: 4, medium: 6, low: 8, info: 5 },
-            ]}
+            data={timelineData}
             xDataKey="time"
             lines={[
               { dataKey: 'critical', stroke: '#ef4444', name: 'Critical' },
