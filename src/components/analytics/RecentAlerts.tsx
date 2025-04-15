@@ -46,6 +46,8 @@ export default function RecentAlerts() {
     source: '',
     time: ''
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const alertsPerPage = 10;
 
   const { data: apiAlerts = [], isLoading, isError } = useQuery({
     queryKey: ['alerts'],
@@ -79,6 +81,7 @@ export default function RecentAlerts() {
 
     if (!filterExists) {
       setActiveFilters([...activeFilters, { type, value, label }]);
+      setCurrentPage(1); // Reset to first page when adding a new filter
     }
 
     setFilterInputs({ ...filterInputs, [type]: '' });
@@ -88,6 +91,7 @@ export default function RecentAlerts() {
     const newFilters = [...activeFilters];
     newFilters.splice(index, 1);
     setActiveFilters(newFilters);
+    setCurrentPage(1); // Reset to first page when removing a filter
   };
 
   const clearAllFilters = () => {
@@ -98,6 +102,7 @@ export default function RecentAlerts() {
       source: '',
       time: ''
     });
+    setCurrentPage(1); // Reset to first page when clearing all filters
   };
 
   const filteredAlerts = alerts.filter((alert) => {
@@ -145,6 +150,12 @@ export default function RecentAlerts() {
     return sortDirection === 'asc' ? comparison : -comparison;
   });
 
+  // Calcul des alertes à afficher pour la page courante
+  const indexOfLastAlert = currentPage * alertsPerPage;
+  const indexOfFirstAlert = indexOfLastAlert - alertsPerPage;
+  const currentAlerts = sortedAlerts.slice(indexOfFirstAlert, indexOfLastAlert);
+  const totalPages = Math.ceil(sortedAlerts.length / alertsPerPage);
+
   const handleSort = (field: string) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -152,6 +163,7 @@ export default function RecentAlerts() {
       setSortField(field);
       setSortDirection('asc');
     }
+    setCurrentPage(1); // Reset to first page when changing sort
   };
 
   const getSortIcon = (field: string) => {
@@ -164,15 +176,15 @@ export default function RecentAlerts() {
   const getSeverityBadge = (severity: AlertSeverity) => {
     switch (severity) {
       case 'critical':
-        return <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">Critical</Badge>;
+        return <Badge variant="outline" className="bg-red-500/20 text-red-500">Critical</Badge>;
       case 'high':
-        return <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-300">High</Badge>;
+        return <Badge variant="outline" className="bg-orange-500/20 text-orange-500">High</Badge>;
       case 'medium':
-        return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">Medium</Badge>;
+        return <Badge variant="outline" className="bg-yellow-500/20 text-yellow-500">Medium</Badge>;
       case 'low':
-        return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">Low</Badge>;
+        return <Badge variant="outline" className="bg-blue-500/20 text-blue-500">Low</Badge>;
       case 'info':
-        return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Info</Badge>;
+        return <Badge variant="outline" className="bg-green-500/20 text-green-500">Info</Badge>;
       default:
         return <Badge variant="outline">Unknown</Badge>;
     }
@@ -216,10 +228,19 @@ export default function RecentAlerts() {
                 placeholder="Search alerts..."
                 className="pl-8"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1); // Reset to first page when searching
+                }}
               />
             </div>
-            <Select value={selectedSeverity} onValueChange={setSelectedSeverity}>
+            <Select 
+              value={selectedSeverity} 
+              onValueChange={(value) => {
+                setSelectedSeverity(value);
+                setCurrentPage(1); // Reset to first page when changing severity filter
+              }}
+            >
               <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="All severities" />
               </SelectTrigger>
@@ -327,86 +348,114 @@ export default function RecentAlerts() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
           </div>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="cursor-pointer" onClick={() => handleSort('title')}>
-                  <div className="flex items-center">
-                    Alert
-                    {getSortIcon('title')}
-                  </div>
-                </TableHead>
-                <TableHead className="cursor-pointer" onClick={() => handleSort('source')}>
-                  <div className="flex items-center">
-                    Source
-                    {getSortIcon('source')}
-                  </div>
-                </TableHead>
-                <TableHead className="cursor-pointer" onClick={() => handleSort('severity')}>
-                  <div className="flex items-center">
-                    Severity
-                    {getSortIcon('severity')}
-                  </div>
-                </TableHead>
-                <TableHead className="cursor-pointer" onClick={() => handleSort('timestamp')}>
-                  <div className="flex items-center">
-                    Time
-                    {getSortIcon('timestamp')}
-                  </div>
-                </TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sortedAlerts.length > 0 ? (
-                sortedAlerts.map((alert) => (
-                  <TableRow key={alert.id}>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{alert.title}</div>
-                        <div className="text-xs text-muted-foreground">{alert.description}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary">{alert.source}</Badge>
-                    </TableCell>
-                    <TableCell>{getSeverityBadge(alert.severity)}</TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {new Date(alert.timestamp).toLocaleString()}
-                    </TableCell>
-                    <TableCell>
-                      <button className="
-                        p-2 
-                        rounded
-                        border 
-                        border-muted-foreground/20 
-                        hover:border-primary/80 
-                        text-muted-foreground 
-                        hover:text-primary
-                        transition-all
-                        duration-200
-                        hover:shadow-sm
-                        hover:bg-primary/5
-                        group
-                      ">
-                        <Eye className="
-                          h-4 w-4 
-                          group-hover:scale-110 
-                          transition-transform
-                        " />
-                      </button>
+          <>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('title')}>
+                    <div className="flex items-center">
+                      Alert
+                      {getSortIcon('title')}
+                    </div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('source')}>
+                    <div className="flex items-center">
+                      Source
+                      {getSortIcon('source')}
+                    </div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('severity')}>
+                    <div className="flex items-center">
+                      Severity
+                      {getSortIcon('severity')}
+                    </div>
+                  </TableHead>
+                  <TableHead className="cursor-pointer" onClick={() => handleSort('timestamp')}>
+                    <div className="flex items-center">
+                      Time
+                      {getSortIcon('timestamp')}
+                    </div>
+                  </TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {currentAlerts.length > 0 ? (
+                  currentAlerts.map((alert) => (
+                    <TableRow key={alert.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{alert.title}</div>
+                          <div className="text-xs text-muted-foreground">{alert.description}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="secondary">{alert.source}</Badge>
+                      </TableCell>
+                      <TableCell>{getSeverityBadge(alert.severity)}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {new Date(alert.timestamp).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <button className="
+                          p-2 
+                          rounded
+                          border 
+                          border-muted-foreground/20 
+                          hover:border-primary/80 
+                          text-muted-foreground 
+                          hover:text-primary
+                          transition-all
+                          duration-200
+                          hover:shadow-sm
+                          hover:bg-primary/5
+                          group
+                        ">
+                          <Eye className="
+                            h-4 w-4 
+                            group-hover:scale-110 
+                            transition-transform
+                          " />
+                        </button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
+                      No alerts match your filters
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-10 text-muted-foreground">
-                    No alerts match your filters
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+
+            {sortedAlerts.length > alertsPerPage && (
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-muted-foreground">
+                  Affichage des alertes {indexOfFirstAlert + 1}-{Math.min(indexOfLastAlert, sortedAlerts.length)} sur {sortedAlerts.length}
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Précédent
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Suivant
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </CardContent>
     </Card>
