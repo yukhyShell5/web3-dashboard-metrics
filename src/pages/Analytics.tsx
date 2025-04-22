@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +15,7 @@ const Analytics = () => {
   const [timelineData, setTimelineData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSeverity, setSelectedSeverity] = useState<string | null>(null);
+  const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedAlertId, setSelectedAlertId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -31,7 +31,8 @@ const Analytics = () => {
         
         const typeData = Object.entries(typeCounts).map(([name, value]) => ({
           name,
-          value
+          value,
+          active: selectedType === name.toLowerCase()
         }));
         
         // Process alerts by severity
@@ -45,7 +46,7 @@ const Analytics = () => {
           value,
           active: selectedSeverity === name.toLowerCase()
         }));
-        
+
         // Prepare timeline data for the last 24 hours
         const now = new Date();
         const twentyFourHoursAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
@@ -98,10 +99,15 @@ const Analytics = () => {
     };
 
     fetchAlertData();
-  }, [selectedSeverity]);
+  }, [selectedSeverity, selectedType]);
 
   const handleSeverityClick = (severity: string) => {
     setSelectedSeverity(selectedSeverity === severity ? null : severity);
+    setSelectedAlertId(null);
+  };
+
+  const handleTypeClick = (type: string) => {
+    setSelectedType(selectedType === type ? null : type);
     setSelectedAlertId(null);
   };
 
@@ -137,7 +143,8 @@ const Analytics = () => {
               data={alertsByTypeData}
               colors={['#ef4444', '#f97316', '#3b82f6', '#a855f7', '#22c55e']}
               height={250}
-              activeSeverity={selectedSeverity}
+              activeSeverity={selectedType}
+              onSeverityClick={handleTypeClick}
             />
           </CardContent>
         </Card>
