@@ -8,9 +8,19 @@ interface PieChartProps {
   height?: number;
   activeSeverity?: string | null;
   onSeverityClick?: (severity: string) => void;
+  dataKey?: string;
+  nameKey?: string;
 }
 
-const PieChart = ({ data, colors, height = 400, activeSeverity, onSeverityClick }: PieChartProps) => {
+const PieChart = ({ 
+  data, 
+  colors, 
+  height = 400, 
+  activeSeverity, 
+  onSeverityClick,
+  dataKey = "value",
+  nameKey = "name"
+}: PieChartProps) => {
   return (
     <ResponsiveContainer width="100%" height={height}>
       <RechartsPieChart>
@@ -21,7 +31,8 @@ const PieChart = ({ data, colors, height = 400, activeSeverity, onSeverityClick 
           labelLine={false}
           outerRadius={80}
           fill="#8884d8"
-          dataKey="value"
+          dataKey={dataKey}
+          nameKey={nameKey}
           onClick={(data) => onSeverityClick?.(data.name.toLowerCase())}
         >
           {data.map((entry, index) => (
