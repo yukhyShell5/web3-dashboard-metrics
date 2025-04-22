@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircleIcon } from 'lucide-react';
@@ -23,9 +22,10 @@ export interface AlertItemProps {
 interface RecentAlertsProps {
   activeSeverity?: string | null;
   selectedAlertId?: string | null;
+  activeType?: string | null;
 }
 
-export default function RecentAlerts({ activeSeverity, selectedAlertId }: RecentAlertsProps) {
+export default function RecentAlerts({ activeSeverity, selectedAlertId, activeType }: RecentAlertsProps) {
   const [selectedAlert, setSelectedAlert] = useState<AlertItemProps | null>(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
@@ -53,7 +53,7 @@ export default function RecentAlerts({ activeSeverity, selectedAlertId }: Recent
     indexOfFirstAlert,
     indexOfLastAlert,
     sortedAlerts,
-  } = useAlertsData({ activeSeverity, selectedAlertId });
+  } = useAlertsData({ activeSeverity, selectedAlertId, activeType });
 
   const handleSort = (field: string) => {
     if (sortField === field) {

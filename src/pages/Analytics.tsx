@@ -23,7 +23,6 @@ const Analytics = () => {
       try {
         const alerts = await alertsApi.getAlerts();
         
-        // Process alerts by type
         const typeCounts = alerts.reduce((acc, alert) => {
           acc[alert.alert_type] = (acc[alert.alert_type] || 0) + 1;
           return acc;
@@ -35,7 +34,6 @@ const Analytics = () => {
           active: selectedType === name.toLowerCase()
         }));
         
-        // Process alerts by severity
         const severityCounts = alerts.reduce((acc, alert) => {
           acc[alert.severity] = (acc[alert.severity] || 0) + 1;
           return acc;
@@ -47,11 +45,9 @@ const Analytics = () => {
           active: selectedSeverity === name.toLowerCase()
         }));
 
-        // Prepare timeline data for the last 24 hours
         const now = new Date();
         const twentyFourHoursAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
         
-        // Group alerts by hour
         const hourlyAlerts = {};
         
         alerts
@@ -80,7 +76,6 @@ const Analytics = () => {
             hourlyAlerts[hourKey].alerts.push(alert);
           });
         
-        // Convert to array and sort by time
         const timelinePoints = Object.values(hourlyAlerts)
           .sort((a: any, b: any) => {
             const timeA = a.time.split(':').map(Number);
@@ -191,7 +186,8 @@ const Analytics = () => {
 
       <RecentAlerts 
         activeSeverity={selectedSeverity} 
-        selectedAlertId={selectedAlertId} 
+        selectedAlertId={selectedAlertId}
+        activeType={selectedType}
       />
     </div>
   );

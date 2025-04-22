@@ -1,21 +1,15 @@
-
 import { useState } from 'react';
 import { AlertItemProps, AlertSeverity } from '@/components/analytics/RecentAlerts';
 import { useQuery } from '@tanstack/react-query';
 import { alertsApi } from '@/services/apiService';
 
-interface Filter {
-  type: 'source' | 'time';
-  value: string;
-  label: string;
-}
-
 export interface UseAlertsDataProps {
   activeSeverity?: string | null;
   selectedAlertId?: string | null;
+  activeType?: string | null;
 }
 
-export const useAlertsData = ({ activeSeverity, selectedAlertId }: UseAlertsDataProps) => {
+export const useAlertsData = ({ activeSeverity, selectedAlertId, activeType }: UseAlertsDataProps) => {
   const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<string>('timestamp');
@@ -85,6 +79,7 @@ export const useAlertsData = ({ activeSeverity, selectedAlertId }: UseAlertsData
       alert.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesActiveFilter = !activeSeverity || alert.severity === activeSeverity;
     const matchesSelectedAlert = !selectedAlertId || alert.id === selectedAlertId;
+    const matchesActiveType = !activeType || alert.title.toLowerCase() === activeType.toLowerCase();
     const matchesActiveFilters = activeFilters.every(filter => {
       switch (filter.type) {
         case 'source':
@@ -96,7 +91,7 @@ export const useAlertsData = ({ activeSeverity, selectedAlertId }: UseAlertsData
       }
     });
 
-    return matchesSeverity && matchesSearch && matchesActiveFilters && matchesActiveFilter && matchesSelectedAlert;
+    return matchesSeverity && matchesSearch && matchesActiveFilters && matchesActiveFilter && matchesSelectedAlert && matchesActiveType;
   });
 
   const sortedAlerts = [...filteredAlerts].sort((a, b) => {
@@ -153,4 +148,3 @@ export const useAlertsData = ({ activeSeverity, selectedAlertId }: UseAlertsData
     sortedAlerts,
   };
 };
-
