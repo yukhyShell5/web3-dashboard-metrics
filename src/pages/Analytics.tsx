@@ -22,7 +22,6 @@ const Analytics = () => {
       try {
         const alerts = await alertsApi.getAlerts();
         
-        // Process data for type distribution
         const typeCounts = alerts.reduce((acc, alert) => {
           acc[alert.alert_type] = (acc[alert.alert_type] || 0) + 1;
           return acc;
@@ -33,7 +32,6 @@ const Analytics = () => {
           value
         }));
         
-        // Process data for severity distribution
         const severityCounts = alerts.reduce((acc, alert) => {
           acc[alert.severity] = (acc[alert.severity] || 0) + 1;
           return acc;
@@ -45,20 +43,27 @@ const Analytics = () => {
           active: selectedSeverity === name.toLowerCase()
         }));
         
-        // Process timeline data - now keeping individual alerts
-        const timelinePoints = alerts.map(alert => ({
-          time: new Date(alert.date).toLocaleTimeString(),
-          id: alert.id.toString(),
-          [alert.severity.toLowerCase()]: 1,
-          critical: alert.severity === 'critical' ? 1 : 0,
-          high: alert.severity === 'high' ? 1 : 0,
-          medium: alert.severity === 'medium' ? 1 : 0,
-          low: alert.severity === 'low' ? 1 : 0,
-          info: alert.severity === 'info' ? 1 : 0,
-          alert
-        }));
+        const now = new Date();
+        const twentyFourHoursAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
         
-        // Sort by time
+        const timelinePoints = alerts
+          .filter(alert => new Date(alert.date) >= twentyFourHoursAgo)
+          .map(alert => ({
+            time: new Date(alert.date).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false
+            }),
+            id: alert.id.toString(),
+            [alert.severity.toLowerCase()]: 1,
+            critical: alert.severity === 'critical' ? 1 : 0,
+            high: alert.severity === 'high' ? 1 : 0,
+            medium: alert.severity === 'medium' ? 1 : 0,
+            low: alert.severity === 'low' ? 1 : 0,
+            info: alert.severity === 'info' ? 1 : 0,
+            alert
+          }));
+        
         const sortedTimeline = timelinePoints.sort((a, b) => 
           new Date(a.alert.date).getTime() - new Date(b.alert.date).getTime()
         );
