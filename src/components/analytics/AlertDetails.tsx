@@ -1,4 +1,3 @@
-
 import React from 'react';
 import {
   Sheet,
@@ -11,12 +10,35 @@ import { Badge } from "@/components/ui/badge";
 import { AlertItemProps } from './RecentAlerts';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardDescription } from "@/components/ui/card";
+import AddressInteractionMap from './AddressInteractionMap';
+import TransactionFlowGraph from './TransactionFlowGraph';
 
 interface AlertDetailsProps {
   alert: AlertItemProps | null;
   isOpen: boolean;
   onClose: () => void;
 }
+
+const addressData = [
+  { address: "0x123...abc", interactions: 15, value: 2.5 },
+  { address: "0x456...def", interactions: 8, value: 1.2 },
+  { address: "0x789...ghi", interactions: 25, value: 4.8 },
+  { address: "0xabc...123", interactions: 12, value: 0.9 },
+];
+
+const flowData = {
+  nodes: [
+    { name: "Source Wallet" },
+    { name: "Contract A" },
+    { name: "DEX" },
+    { name: "Unknown Wallet" }
+  ],
+  links: [
+    { source: 0, target: 1, value: 100 },
+    { source: 1, target: 2, value: 80 },
+    { source: 2, target: 3, value: 60 }
+  ]
+};
 
 export function AlertDetails({ alert, isOpen, onClose }: AlertDetailsProps) {
   if (!alert) return null;
@@ -98,19 +120,14 @@ export function AlertDetails({ alert, isOpen, onClose }: AlertDetailsProps) {
             <TabsContent value="flow" className="space-y-4">
               <Card>
                 <CardContent className="pt-6">
-                  <div className="space-y-4">
+                  <div className="space-y-8">
                     <div>
-                      <h4 className="font-medium mb-2">Flux des Transactions</h4>
-                      <div className="space-y-2">
-                        <div className="text-sm">
-                          <p className="mb-2">Chemin des fonds:</p>
-                          <div className="pl-4 border-l-2 border-muted space-y-2">
-                            <p>1. Wallet A → Contract B</p>
-                            <p>2. Contract B → DEX</p>
-                            <p>3. DEX → Unknown Wallet</p>
-                          </div>
-                        </div>
-                      </div>
+                      <h4 className="font-medium mb-4">Interactions par Adresse</h4>
+                      <AddressInteractionMap data={addressData} />
+                    </div>
+                    <div>
+                      <h4 className="font-medium mb-4">Flux des Transactions</h4>
+                      <TransactionFlowGraph data={flowData} />
                     </div>
                   </div>
                 </CardContent>
