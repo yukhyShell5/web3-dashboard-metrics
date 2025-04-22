@@ -18,6 +18,7 @@ import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 import { alertsApi } from '@/services/apiService';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { AlertDetails } from './AlertDetails';
 
 export type AlertSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
 
@@ -47,6 +48,8 @@ export default function RecentAlerts() {
     time: ''
   });
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedAlert, setSelectedAlert] = useState<AlertItemProps | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const alertsPerPage = 10;
 
   const { data: apiAlerts = [], isLoading, isError } = useQuery({
@@ -150,7 +153,6 @@ export default function RecentAlerts() {
     return sortDirection === 'asc' ? comparison : -comparison;
   });
 
-  // Calcul des alertes à afficher pour la page courante
   const indexOfLastAlert = currentPage * alertsPerPage;
   const indexOfFirstAlert = indexOfLastAlert - alertsPerPage;
   const currentAlerts = sortedAlerts.slice(indexOfFirstAlert, indexOfLastAlert);
@@ -397,20 +399,26 @@ export default function RecentAlerts() {
                         {new Date(alert.timestamp).toLocaleString()}
                       </TableCell>
                       <TableCell>
-                        <button className="
-                          p-2 
-                          rounded
-                          border 
-                          border-muted-foreground/20 
-                          hover:border-primary/80 
-                          text-muted-foreground 
-                          hover:text-primary
-                          transition-all
-                          duration-200
-                          hover:shadow-sm
-                          hover:bg-primary/5
-                          group
-                        ">
+                        <button 
+                          className="
+                            p-2 
+                            rounded
+                            border 
+                            border-muted-foreground/20 
+                            hover:border-primary/80 
+                            text-muted-foreground 
+                            hover:text-primary
+                            transition-all
+                            duration-200
+                            hover:shadow-sm
+                            hover:bg-primary/5
+                            group
+                          "
+                          onClick={() => {
+                            setSelectedAlert(alert);
+                            setIsDetailsOpen(true);
+                          }}
+                        >
                           <Eye className="
                             h-4 w-4 
                             group-hover:scale-110 
@@ -458,6 +466,15 @@ export default function RecentAlerts() {
           </>
         )}
       </CardContent>
+
+      <AlertDetails 
+        alert={selectedAlert}
+        isOpen={isDetailsOpen}
+        onClose={() => {
+          setIsDetailsOpen(false);
+          setSelectedAlert(null);
+        }}
+      />
     </Card>
   );
 }
