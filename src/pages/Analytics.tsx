@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +8,6 @@ import PieChart from '@/components/charts/PieChart';
 import RecentAlerts from '@/components/analytics/RecentAlerts';
 import { useNavigate } from 'react-router-dom';
 import { alertsApi } from '@/services/apiService';
-import AlertFilters from '@/components/analytics/AlertFilters';
 
 const Analytics = () => {
   const navigate = useNavigate();
@@ -126,13 +126,6 @@ const Analytics = () => {
         </Button>
       </div>
 
-      <div className="flex items-center justify-between">
-        <RecentAlerts 
-          activeSeverity={selectedSeverity} 
-          selectedAlertId={selectedAlertId} 
-        />
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
@@ -188,6 +181,11 @@ const Analytics = () => {
           />
         </CardContent>
       </Card>
+
+      <RecentAlerts 
+        activeSeverity={selectedSeverity} 
+        selectedAlertId={selectedAlertId} 
+      />
     </div>
   );
 };

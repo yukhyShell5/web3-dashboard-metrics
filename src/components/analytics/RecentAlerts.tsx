@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircleIcon } from 'lucide-react';
@@ -86,14 +87,12 @@ export default function RecentAlerts({ activeSeverity, selectedAlertId }: Recent
   }
 
   return (
-    <Card className="w-full">
-      <CardHeader className="flex-row items-center justify-between">
-        <div>
-          <CardTitle>Recent Alerts</CardTitle>
-          <CardDescription>
-            Recent security alerts detected on monitored addresses
-          </CardDescription>
-        </div>
+    <Card>
+      <CardHeader>
+        <CardTitle>Recent Alerts</CardTitle>
+        <CardDescription>
+          Recent security alerts detected on monitored addresses
+        </CardDescription>
       </CardHeader>
 
       <CardContent>
