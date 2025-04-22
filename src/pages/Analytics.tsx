@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -22,6 +23,7 @@ const Analytics = () => {
       try {
         const alerts = await alertsApi.getAlerts();
         
+        // Process alerts by type
         const typeCounts = alerts.reduce((acc, alert) => {
           acc[alert.alert_type] = (acc[alert.alert_type] || 0) + 1;
           return acc;
@@ -32,6 +34,7 @@ const Analytics = () => {
           value
         }));
         
+        // Process alerts by severity
         const severityCounts = alerts.reduce((acc, alert) => {
           acc[alert.severity] = (acc[alert.severity] || 0) + 1;
           return acc;
@@ -43,34 +46,50 @@ const Analytics = () => {
           active: selectedSeverity === name.toLowerCase()
         }));
         
+        // Prepare timeline data for the last 24 hours
         const now = new Date();
         const twentyFourHoursAgo = new Date(now.getTime() - (24 * 60 * 60 * 1000));
         
-        const timelinePoints = alerts
+        // Group alerts by hour
+        const hourlyAlerts = {};
+        
+        alerts
           .filter(alert => new Date(alert.date) >= twentyFourHoursAgo)
-          .map(alert => ({
-            time: new Date(alert.date).toLocaleTimeString([], {
+          .forEach(alert => {
+            const alertDate = new Date(alert.date);
+            const hourKey = alertDate.toLocaleTimeString([], {
               hour: '2-digit',
               minute: '2-digit',
               hour12: false
-            }),
-            id: alert.id.toString(),
-            [alert.severity.toLowerCase()]: 1,
-            critical: alert.severity === 'critical' ? 1 : 0,
-            high: alert.severity === 'high' ? 1 : 0,
-            medium: alert.severity === 'medium' ? 1 : 0,
-            low: alert.severity === 'low' ? 1 : 0,
-            info: alert.severity === 'info' ? 1 : 0,
-            alert
-          }));
+            });
+            
+            if (!hourlyAlerts[hourKey]) {
+              hourlyAlerts[hourKey] = {
+                time: hourKey,
+                critical: 0,
+                high: 0,
+                medium: 0,
+                low: 0,
+                info: 0,
+                alerts: []
+              };
+            }
+            
+            hourlyAlerts[hourKey][alert.severity.toLowerCase()] += 1;
+            hourlyAlerts[hourKey].alerts.push(alert);
+          });
         
-        const sortedTimeline = timelinePoints.sort((a, b) => 
-          new Date(a.alert.date).getTime() - new Date(b.alert.date).getTime()
-        );
+        // Convert to array and sort by time
+        const timelinePoints = Object.values(hourlyAlerts)
+          .sort((a: any, b: any) => {
+            const timeA = a.time.split(':').map(Number);
+            const timeB = b.time.split(':').map(Number);
+            return (timeA[0] * 60 + timeA[1]) - (timeB[0] * 60 + timeB[1]);
+          });
         
         setAlertsByTypeData(typeData);
         setAlertsBySeverityData(severityData);
-        setTimelineData(sortedTimeline);
+        setTimelineData(timelinePoints);
         setLoading(false);
       } catch (error) {
         console.error("Error fetching alert data:", error);

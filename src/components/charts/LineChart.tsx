@@ -25,10 +25,21 @@ const LineChart = ({ data, xDataKey, lines, onLineClick, onPointClick, height = 
     }
   };
 
+  // Make sure each data point has at least a value of 0 for each line
+  const processedData = data.map(item => {
+    const newItem = { ...item };
+    lines.forEach(line => {
+      if (newItem[line.dataKey] === undefined) {
+        newItem[line.dataKey] = 0;
+      }
+    });
+    return newItem;
+  });
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <RechartsLineChart 
-        data={data} 
+        data={processedData} 
         onClick={(e) => e?.activePayload && handleClick(e.activePayload[0]?.payload)}
       >
         <CartesianGrid strokeDasharray="3 3" />
@@ -37,7 +48,7 @@ const LineChart = ({ data, xDataKey, lines, onLineClick, onPointClick, height = 
           interval="preserveStartEnd"
           minTickGap={50}
         />
-        <YAxis />
+        <YAxis allowDecimals={false} />
         <Tooltip />
         <Legend 
           onClick={(e: any) => onLineClick?.(e.dataKey)}
