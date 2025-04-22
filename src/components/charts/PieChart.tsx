@@ -1,28 +1,19 @@
 
 import React from 'react';
-import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, Legend, Tooltip } from 'recharts';
 
 interface PieChartProps {
-  data: Array<{
-    name: string;
-    value: number;
-  }>;
+  data: any[];
   colors: string[];
   height?: number;
-  dataKey?: string;
-  nameKey?: string;
+  activeSeverity?: string | null;
+  onSeverityClick?: (severity: string) => void;
 }
 
-const PieChart: React.FC<PieChartProps> = ({ 
-  data, 
-  colors, 
-  height = 300,
-  dataKey = "value",
-  nameKey = "name"
-}) => {
+const PieChart = ({ data, colors, height = 400, activeSeverity, onSeverityClick }: PieChartProps) => {
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <RechartsPieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+      <RechartsPieChart>
         <Pie
           data={data}
           cx="50%"
@@ -30,23 +21,27 @@ const PieChart: React.FC<PieChartProps> = ({
           labelLine={false}
           outerRadius={80}
           fill="#8884d8"
-          dataKey={dataKey}
-          nameKey={nameKey}
+          dataKey="value"
+          onClick={(data) => onSeverityClick?.(data.name.toLowerCase())}
         >
           {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
+            <Cell
+              key={`cell-${index}`}
+              fill={colors[index % colors.length]}
+              opacity={!activeSeverity || entry.name.toLowerCase() === activeSeverity ? 1 : 0.3}
+              style={{ cursor: 'pointer' }}
+            />
           ))}
         </Pie>
-        <Tooltip 
-          contentStyle={{ 
-            backgroundColor: 'hsl(var(--popover))', 
-            borderColor: 'hsl(var(--border))',
-            color: 'hsl(var(--foreground))'
-          }}
-          itemStyle={{ color: 'hsl(var(--foreground))' }}
-          labelStyle={{ color: 'hsl(var(--foreground))' }}
+        <Tooltip />
+        <Legend
+          onClick={(e) => onSeverityClick?.(e.value.toLowerCase())}
+          formatter={(value) => (
+            <span className={`cursor-pointer ${value.toLowerCase() === activeSeverity ? 'font-bold' : ''}`}>
+              {value}
+            </span>
+          )}
         />
-        <Legend formatter={(value) => <span style={{ color: '#FFFFFF' }}>{value}</span>} />
       </RechartsPieChart>
     </ResponsiveContainer>
   );

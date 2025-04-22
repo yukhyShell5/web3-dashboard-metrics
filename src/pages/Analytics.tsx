@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  BellRingIcon,
-} from 'lucide-react';
+import { BellRingIcon } from 'lucide-react';
 import LineChart from '@/components/charts/LineChart';
 import PieChart from '@/components/charts/PieChart';
 import RecentAlerts from '@/components/analytics/RecentAlerts';
@@ -16,6 +14,7 @@ const Analytics = () => {
   const [alertsBySeverityData, setAlertsBySeverityData] = useState([]);
   const [timelineData, setTimelineData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedSeverity, setSelectedSeverity] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAlertData = async () => {
@@ -42,7 +41,8 @@ const Analytics = () => {
         
         const severityData = Object.entries(severityCounts).map(([name, value]) => ({
           name: name.charAt(0).toUpperCase() + name.slice(1),
-          value
+          value,
+          active: selectedSeverity === name.toLowerCase()
         }));
         
         // Traiter les données pour la timeline (groupées par heure)
@@ -82,11 +82,15 @@ const Analytics = () => {
     };
 
     fetchAlertData();
-  }, []);
+  }, [selectedSeverity]);
 
   if (loading) {
     return <div>Loading analytics data...</div>;
   }
+
+  const handleSeverityClick = (severity: string) => {
+    setSelectedSeverity(selectedSeverity === severity ? null : severity);
+  };
 
   return (
     <div className="space-y-8">
@@ -112,6 +116,7 @@ const Analytics = () => {
               data={alertsByTypeData}
               colors={['#ef4444', '#f97316', '#3b82f6', '#a855f7', '#22c55e']}
               height={250}
+              activeSeverity={selectedSeverity}
             />
           </CardContent>
         </Card>
@@ -125,6 +130,8 @@ const Analytics = () => {
               data={alertsBySeverityData}
               colors={['#ef4444', '#f97316', '#eab308', '#3b82f6', '#22c55e']}
               height={250}
+              activeSeverity={selectedSeverity}
+              onSeverityClick={handleSeverityClick}
             />
           </CardContent>
         </Card>
@@ -142,17 +149,18 @@ const Analytics = () => {
             data={timelineData}
             xDataKey="time"
             lines={[
-              { dataKey: 'critical', stroke: '#ef4444', name: 'Critical' },
-              { dataKey: 'high', stroke: '#f97316', name: 'High' },
-              { dataKey: 'medium', stroke: '#eab308', name: 'Medium' },
-              { dataKey: 'low', stroke: '#3b82f6', name: 'Low' },
-              { dataKey: 'info', stroke: '#22c55e', name: 'Info' },
+              { dataKey: 'critical', stroke: '#ef4444', name: 'Critical', active: selectedSeverity === 'critical' },
+              { dataKey: 'high', stroke: '#f97316', name: 'High', active: selectedSeverity === 'high' },
+              { dataKey: 'medium', stroke: '#eab308', name: 'Medium', active: selectedSeverity === 'medium' },
+              { dataKey: 'low', stroke: '#3b82f6', name: 'Low', active: selectedSeverity === 'low' },
+              { dataKey: 'info', stroke: '#22c55e', name: 'Info', active: selectedSeverity === 'info' },
             ]}
+            onLineClick={handleSeverityClick}
           />
         </CardContent>
       </Card>
 
-      <RecentAlerts />
+      <RecentAlerts activeSeverity={selectedSeverity} />
     </div>
   );
 };
