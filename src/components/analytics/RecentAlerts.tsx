@@ -39,9 +39,10 @@ interface Filter {
 
 interface RecentAlertsProps {
   activeSeverity?: string | null;
+  selectedAlertId?: string | null;
 }
 
-export default function RecentAlerts({ activeSeverity }: RecentAlertsProps) {
+export default function RecentAlerts({ activeSeverity, selectedAlertId }: RecentAlertsProps) {
   const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<string>('timestamp');
@@ -118,6 +119,7 @@ export default function RecentAlerts({ activeSeverity }: RecentAlertsProps) {
       alert.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       alert.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesActiveFilter = !activeSeverity || alert.severity === activeSeverity;
+    const matchesSelectedAlert = !selectedAlertId || alert.id === selectedAlertId;
     const matchesActiveFilters = activeFilters.every(filter => {
       switch (filter.type) {
         case 'source':
@@ -129,7 +131,7 @@ export default function RecentAlerts({ activeSeverity }: RecentAlertsProps) {
       }
     });
 
-    return matchesSeverity && matchesSearch && matchesActiveFilters && matchesActiveFilter;
+    return matchesSeverity && matchesSearch && matchesActiveFilters && matchesActiveFilter && matchesSelectedAlert;
   });
 
   const sortedAlerts = [...filteredAlerts].sort((a, b) => {
