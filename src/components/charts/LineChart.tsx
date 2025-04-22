@@ -15,9 +15,10 @@ interface LineChartProps {
   lines: LineConfig[];
   onLineClick?: (dataKey: string) => void;
   onPointClick?: (alertId: string) => void;
+  height?: number;
 }
 
-const LineChart = ({ data, xDataKey, lines, onLineClick, onPointClick }: LineChartProps) => {
+const LineChart = ({ data, xDataKey, lines, onLineClick, onPointClick, height = 400 }: LineChartProps) => {
   const handleClick = (point: any) => {
     if (point && point.id && onPointClick) {
       onPointClick(point.id);
@@ -25,8 +26,11 @@ const LineChart = ({ data, xDataKey, lines, onLineClick, onPointClick }: LineCha
   };
 
   return (
-    <ResponsiveContainer width="100%" height={400}>
-      <RechartsLineChart data={data} onClick={(e) => e?.activePayload && handleClick(e.activePayload[0]?.payload)}>
+    <ResponsiveContainer width="100%" height={height}>
+      <RechartsLineChart 
+        data={data} 
+        onClick={(e) => e?.activePayload && handleClick(e.activePayload[0]?.payload)}
+      >
         <CartesianGrid strokeDasharray="3 3" />
         <XAxis 
           dataKey={xDataKey} 

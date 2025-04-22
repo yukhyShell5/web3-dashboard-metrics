@@ -46,6 +46,14 @@ const NotificationsTab = () => {
     info: false
   });
 
+  const defaultSettings = {
+    critical: true,
+    high: true,
+    medium: true,
+    low: false,
+    info: false
+  };
+
   // Requête pour obtenir les webhooks
   const { data: webhooks, isLoading: isLoadingWebhooks } = useQuery<Webhook[]>({
     queryKey: ['webhooks'],
@@ -53,10 +61,9 @@ const NotificationsTab = () => {
   });
 
   // Requête pour obtenir les paramètres de notification
-  useQuery<NotificationSettings>({
-    queryKey: ['notificationSettings'],
-    queryFn: () => notificationApi.getNotificationSettings(),
-    onSuccess: (data) => setNotificationSettings(data)
+  const { data: settings = defaultSettings, isLoading } = useQuery({
+    queryKey: ['notification-settings'],
+    queryFn: notificationApi.getNotificationSettings,
   });
 
   // Mutation pour créer un nouveau webhook
