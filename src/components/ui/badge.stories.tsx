@@ -1,16 +1,17 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { badge } from './badge';
 
-const meta: Meta<typeof badge> = {
-  title: 'Components/Ui/badge',
-  component: badge,
+import type { Meta, StoryObj } from '@storybook/react';
+import { Badge } from './badge';  // Named import with correct capitalization
+
+const meta: Meta<typeof Badge> = {
+  title: 'Components/Ui/Badge',
+  component: Badge,
 };
 
 export default meta;
-type Story = StoryObj<typeof badge>;
+type Story = StoryObj<typeof Badge>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    // Add any necessary props
   },
 };

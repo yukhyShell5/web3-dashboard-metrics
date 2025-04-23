@@ -1,5 +1,6 @@
+
 import type { Meta, StoryObj } from '@storybook/react';
-import { RecentRuleActivity } from './RecentRuleActivity';
+import RecentRuleActivity from './RecentRuleActivity';  // Default import
 
 const meta: Meta<typeof RecentRuleActivity> = {
   title: 'Components/Rules/RecentRuleActivity',
@@ -11,6 +12,6 @@ type Story = StoryObj<typeof RecentRuleActivity>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    // Add any necessary props here
   },
 };
