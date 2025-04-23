@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { Toaster } from './sonner';
 
 const meta: Meta<typeof Toaster> = {
-  title: 'Components/Ui/Toaster',
+  title: 'Components/Ui/SonnerToaster',
   component: Toaster,
 };
 
@@ -12,6 +12,6 @@ type Story = StoryObj<typeof Toaster>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    // Add your props here
   },
 };
