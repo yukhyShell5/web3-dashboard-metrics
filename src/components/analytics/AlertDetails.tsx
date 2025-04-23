@@ -39,123 +39,125 @@ export function AlertDetails({ alert, isOpen, onClose }: AlertDetailsProps) {
   const toggleMaximize = () => setIsMaximized(!isMaximized);
 
   const sheetClass = isMaximized 
-    ? "w-screen h-screen p-8" 
-    : "w-full sm:max-w-xl md:max-w-2xl p-6";
+    ? "w-[100vw] h-[100vh] p-0" 
+    : "w-full sm:max-w-xl md:max-w-2xl lg:max-w-4xl p-0";
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className={sheetClass} side="right">
-        <SheetHeader className="space-y-4">
-          <div className="flex items-center justify-between">
-            <SheetTitle className="flex items-center gap-4">
-              <span>{alert.title}</span>
-              <Badge className={getSeverityColor(alert.severity)}>
-                {alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1)}
-              </Badge>
-            </SheetTitle>
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={toggleMaximize}
-              className="hover:bg-secondary/80"
-            >
-              {isMaximized ? (
-                <Minimize2Icon className="h-5 w-5" />
-              ) : (
-                <Maximize2Icon className="h-5 w-5" />
-              )}
-            </Button>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            {new Date(alert.timestamp).toLocaleString()}
-          </div>
-        </SheetHeader>
+        <div className={`h-full ${isMaximized ? 'p-8' : 'p-6'}`}>
+          <SheetHeader className="space-y-4">
+            <div className="flex items-center justify-between">
+              <SheetTitle className="flex items-center gap-4">
+                <span>{alert.title}</span>
+                <Badge className={getSeverityColor(alert.severity)}>
+                  {alert.severity.charAt(0).toUpperCase() + alert.severity.slice(1)}
+                </Badge>
+              </SheetTitle>
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={toggleMaximize}
+                className="hover:bg-secondary/80"
+              >
+                {isMaximized ? (
+                  <Minimize2Icon className="h-5 w-5" />
+                ) : (
+                  <Maximize2Icon className="h-5 w-5" />
+                )}
+              </Button>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              {new Date(alert.timestamp).toLocaleString()}
+            </div>
+          </SheetHeader>
 
-        <Tabs defaultValue="overview" className="mt-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Aperçu</TabsTrigger>
-            <TabsTrigger value="details">Détails</TabsTrigger>
-            <TabsTrigger value="flow">Flow</TabsTrigger>
-            <TabsTrigger value="impact">Impact</TabsTrigger>
-          </TabsList>
+          <Tabs defaultValue="overview" className="mt-6">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="overview">Aperçu</TabsTrigger>
+              <TabsTrigger value="details">Détails</TabsTrigger>
+              <TabsTrigger value="flow">Flow</TabsTrigger>
+              <TabsTrigger value="impact">Impact</TabsTrigger>
+            </TabsList>
 
-          <ScrollArea className="h-[calc(100vh-14rem)] mt-6">
-            <TabsContent value="overview">
-              <Card className="border-secondary/20">
-                <CardContent className="space-y-6 p-6">
-                  <div>
-                    <h4 className="font-medium mb-3">Description</h4>
-                    <p className="text-sm text-muted-foreground">{alert.description}</p>
-                  </div>
-                  <div>
-                    <h4 className="font-medium mb-3">Source</h4>
-                    <Badge variant="outline">{alert.source}</Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="details">
-              <Card className="border-secondary/20">
-                <CardContent className="space-y-6 p-6">
-                  <div>
-                    <h4 className="font-medium mb-3">Données Techniques</h4>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <span className="text-muted-foreground">Transaction Hash</span>
-                      <span className="font-mono">0x123...abc</span>
-                      <span className="text-muted-foreground">Block Number</span>
-                      <span>14120450</span>
-                      <span className="text-muted-foreground">Protocol</span>
-                      <span>Ethereum</span>
+            <ScrollArea className={`mt-6 ${isMaximized ? 'h-[calc(100vh-12rem)]' : 'h-[calc(100vh-14rem)]'}`}>
+              <TabsContent value="overview">
+                <Card className="border-secondary/20">
+                  <CardContent className="space-y-6 p-6">
+                    <div>
+                      <h4 className="font-medium mb-3">Description</h4>
+                      <p className="text-sm text-muted-foreground">{alert.description}</p>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                    <div>
+                      <h4 className="font-medium mb-3">Source</h4>
+                      <Badge variant="outline">{alert.source}</Badge>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-            <TabsContent value="flow">
-              <Card className="border-secondary/20">
-                <CardContent className="space-y-6 p-6">
-                  <div>
-                    <h4 className="font-medium mb-3">Flux des Transactions</h4>
-                    <div className="text-sm space-y-4">
-                      <p>Chemin des fonds:</p>
-                      <div className="pl-4 border-l-2 border-muted space-y-3">
-                        <p>1. Wallet A → Contract B</p>
-                        <p>2. Contract B → DEX</p>
-                        <p>3. DEX → Unknown Wallet</p>
+              <TabsContent value="details">
+                <Card className="border-secondary/20">
+                  <CardContent className="space-y-6 p-6">
+                    <div>
+                      <h4 className="font-medium mb-3">Données Techniques</h4>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <span className="text-muted-foreground">Transaction Hash</span>
+                        <span className="font-mono">0x123...abc</span>
+                        <span className="text-muted-foreground">Block Number</span>
+                        <span>14120450</span>
+                        <span className="text-muted-foreground">Protocol</span>
+                        <span>Ethereum</span>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
-            <TabsContent value="impact">
-              <Card className="border-secondary/20">
-                <CardContent className="space-y-6 p-6">
-                  <div>
-                    <h4 className="font-medium mb-3">Impact Financier</h4>
-                    <div className="grid grid-cols-2 gap-6">
-                      <Card>
-                        <CardContent className="p-6">
-                          <div className="text-2xl font-bold mb-2">$45,000</div>
-                          <div className="text-sm text-muted-foreground">Montant Total</div>
-                        </CardContent>
-                      </Card>
-                      <Card>
-                        <CardContent className="p-6">
-                          <div className="text-2xl font-bold mb-2">3</div>
-                          <div className="text-sm text-muted-foreground">Wallets Affectés</div>
-                        </CardContent>
-                      </Card>
+              <TabsContent value="flow">
+                <Card className="border-secondary/20">
+                  <CardContent className="space-y-6 p-6">
+                    <div>
+                      <h4 className="font-medium mb-3">Flux des Transactions</h4>
+                      <div className="text-sm space-y-4">
+                        <p>Chemin des fonds:</p>
+                        <div className="pl-4 border-l-2 border-muted space-y-3">
+                          <p>1. Wallet A → Contract B</p>
+                          <p>2. Contract B → DEX</p>
+                          <p>3. DEX → Unknown Wallet</p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </ScrollArea>
-        </Tabs>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="impact">
+                <Card className="border-secondary/20">
+                  <CardContent className="space-y-6 p-6">
+                    <div>
+                      <h4 className="font-medium mb-3">Impact Financier</h4>
+                      <div className="grid grid-cols-2 gap-6">
+                        <Card>
+                          <CardContent className="p-6">
+                            <div className="text-2xl font-bold mb-2">$45,000</div>
+                            <div className="text-sm text-muted-foreground">Montant Total</div>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="p-6">
+                            <div className="text-2xl font-bold mb-2">3</div>
+                            <div className="text-sm text-muted-foreground">Wallets Affectés</div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </ScrollArea>
+          </Tabs>
+        </div>
       </SheetContent>
     </Sheet>
   );
