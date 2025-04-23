@@ -1,13 +1,14 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { alert } from './alert';
 
-const meta: Meta<typeof alert> = {
-  title: 'Components/Ui/alert',
-  component: alert,
+import type { Meta, StoryObj } from '@storybook/react';
+import { Alert } from './alert';
+
+const meta: Meta<typeof Alert> = {
+  title: 'Components/Ui/Alert',
+  component: Alert,
 };
 
 export default meta;
-type Story = StoryObj<typeof alert>;
+type Story = StoryObj<typeof Alert>;
 
 export const Default: Story = {
   args: {

@@ -1,5 +1,6 @@
+
 import type { Meta, StoryObj } from '@storybook/react';
-import { PieChart } from './PieChart';
+import PieChart from './PieChart';
 
 const meta: Meta<typeof PieChart> = {
   title: 'Components/Charts/PieChart',

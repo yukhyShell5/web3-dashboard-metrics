@@ -1,5 +1,6 @@
+
 import type { Meta, StoryObj } from '@storybook/react';
-import { RecentAlerts } from './RecentAlerts';
+import RecentAlerts from './RecentAlerts';
 
 const meta: Meta<typeof RecentAlerts> = {
   title: 'Components/Analytics/RecentAlerts',

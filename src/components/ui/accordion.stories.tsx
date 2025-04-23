@@ -1,13 +1,14 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { accordion } from './accordion';
 
-const meta: Meta<typeof accordion> = {
-  title: 'Components/Ui/accordion',
-  component: accordion,
+import type { Meta, StoryObj } from '@storybook/react';
+import { Accordion } from './accordion';
+
+const meta: Meta<typeof Accordion> = {
+  title: 'Components/Ui/Accordion',
+  component: Accordion,
 };
 
 export default meta;
-type Story = StoryObj<typeof accordion>;
+type Story = StoryObj<typeof Accordion>;
 
 export const Default: Story = {
   args: {

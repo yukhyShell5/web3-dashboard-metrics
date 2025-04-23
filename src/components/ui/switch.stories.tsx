@@ -1,13 +1,14 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { SwitchComponent as SwitchComponent } from './switch';
 
-const meta: Meta<typeof SwitchComponent> = {
-  title: 'Components/Ui/SwitchComponent',
-  component: SwitchComponent,
+import type { Meta, StoryObj } from '@storybook/react';
+import { Switch } from './switch';
+
+const meta: Meta<typeof Switch> = {
+  title: 'Components/Ui/Switch',
+  component: Switch,
 };
 
 export default meta;
-type Story = StoryObj<typeof SwitchComponent>;
+type Story = StoryObj<typeof Switch>;
 
 export const Default: Story = {
   args: {

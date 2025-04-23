@@ -1,7 +1,15 @@
+
 import { useState } from 'react';
 import { AlertItemProps, AlertSeverity } from '@/components/analytics/RecentAlerts';
 import { useQuery } from '@tanstack/react-query';
 import { alertsApi } from '@/services/apiService';
+
+// Define the missing Filter type
+export interface Filter {
+  type: 'source' | 'time';
+  value: string;
+  label: string;
+}
 
 export interface UseAlertsDataProps {
   activeSeverity?: string | null;
