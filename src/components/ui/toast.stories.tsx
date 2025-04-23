@@ -1,16 +1,19 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { toast } from './toast';
 
-const meta: Meta<typeof toast> = {
-  title: 'Components/Ui/toast',
-  component: toast,
+import type { Meta, StoryObj } from '@storybook/react';
+import { toast } from 'sonner';
+import { Button } from './button';
+
+const meta: Meta = {
+  title: 'Components/Ui/Toast',
+  component: Button,
 };
 
 export default meta;
-type Story = StoryObj<typeof toast>;
+type Story = StoryObj<typeof Button>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    onClick: () => toast('Hello, world!'),
+    children: 'Show Toast',
   },
 };

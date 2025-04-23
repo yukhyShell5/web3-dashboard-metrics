@@ -1,16 +1,24 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { collapsible } from './collapsible';
 
-const meta: Meta<typeof collapsible> = {
-  title: 'Components/Ui/collapsible',
-  component: collapsible,
+import type { Meta, StoryObj } from '@storybook/react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './collapsible';
+
+const meta: Meta<typeof Collapsible> = {
+  title: 'Components/Ui/Collapsible',
+  component: Collapsible,
 };
 
 export default meta;
-type Story = StoryObj<typeof collapsible>;
+type Story = StoryObj<typeof Collapsible>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    children: (
+      <>
+        <CollapsibleTrigger>Toggle</CollapsibleTrigger>
+        <CollapsibleContent>
+          Content goes here
+        </CollapsibleContent>
+      </>
+    ),
   },
 };

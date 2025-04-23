@@ -1,16 +1,17 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { input } from './input';
 
-const meta: Meta<typeof input> = {
-  title: 'Components/Ui/input',
-  component: input,
+import type { Meta, StoryObj } from '@storybook/react';
+import { Input } from './input';
+
+const meta: Meta<typeof Input> = {
+  title: 'Components/Ui/Input',
+  component: Input,
 };
 
 export default meta;
-type Story = StoryObj<typeof input>;
+type Story = StoryObj<typeof Input>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    placeholder: 'Enter text',
   },
 };

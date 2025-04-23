@@ -1,16 +1,32 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { drawer } from './drawer';
 
-const meta: Meta<typeof drawer> = {
-  title: 'Components/Ui/drawer',
-  component: drawer,
+import type { Meta, StoryObj } from '@storybook/react';
+import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle, DrawerTrigger } from './drawer';
+import { Button } from './button';
+
+const meta: Meta<typeof Drawer> = {
+  title: 'Components/Ui/Drawer',
+  component: Drawer,
 };
 
 export default meta;
-type Story = StoryObj<typeof drawer>;
+type Story = StoryObj<typeof Drawer>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    children: (
+      <>
+        <DrawerTrigger asChild>
+          <Button variant="outline">Open Drawer</Button>
+        </DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Drawer Title</DrawerTitle>
+            <DrawerDescription>
+              Drawer description goes here.
+            </DrawerDescription>
+          </DrawerContent>
+        </DrawerContent>
+      </>
+    ),
   },
 };

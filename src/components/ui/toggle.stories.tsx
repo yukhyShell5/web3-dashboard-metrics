@@ -1,16 +1,17 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { toggle } from './toggle';
 
-const meta: Meta<typeof toggle> = {
-  title: 'Components/Ui/toggle',
-  component: toggle,
+import type { Meta, StoryObj } from '@storybook/react';
+import { Toggle } from './toggle';
+
+const meta: Meta<typeof Toggle> = {
+  title: 'Components/Ui/Toggle',
+  component: Toggle,
 };
 
 export default meta;
-type Story = StoryObj<typeof toggle>;
+type Story = StoryObj<typeof Toggle>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    children: 'Toggle',
   },
 };

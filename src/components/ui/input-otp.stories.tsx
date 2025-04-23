@@ -1,16 +1,25 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { InputOtp } from './input-otp';
 
-const meta: Meta<typeof InputOtp> = {
-  title: 'Components/Ui/InputOtp',
-  component: InputOtp,
+import type { Meta, StoryObj } from '@storybook/react';
+import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from './input-otp';
+
+const meta: Meta<typeof InputOTP> = {
+  title: 'Components/Ui/InputOTP',
+  component: InputOTP,
 };
 
 export default meta;
-type Story = StoryObj<typeof InputOtp>;
+type Story = StoryObj<typeof InputOTP>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    maxLength: 6,
+    children: (
+      <InputOTPGroup>
+        <InputOTPSlot index={0} />
+        <InputOTPSeparator />
+        <InputOTPSlot index={1} />
+        <InputOTPSlot index={2} />
+      </InputOTPGroup>
+    ),
   },
 };

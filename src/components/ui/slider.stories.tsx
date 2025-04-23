@@ -1,16 +1,19 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { slider } from './slider';
 
-const meta: Meta<typeof slider> = {
-  title: 'Components/Ui/slider',
-  component: slider,
+import type { Meta, StoryObj } from '@storybook/react';
+import { Slider } from './slider';
+
+const meta: Meta<typeof Slider> = {
+  title: 'Components/Ui/Slider',
+  component: Slider,
 };
 
 export default meta;
-type Story = StoryObj<typeof slider>;
+type Story = StoryObj<typeof Slider>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    defaultValue: [50],
+    max: 100,
+    step: 1,
   },
 };

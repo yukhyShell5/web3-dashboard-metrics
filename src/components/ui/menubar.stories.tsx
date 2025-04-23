@@ -1,16 +1,25 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { menubar } from './menubar';
 
-const meta: Meta<typeof menubar> = {
-  title: 'Components/Ui/menubar',
-  component: menubar,
+import type { Meta, StoryObj } from '@storybook/react';
+import { Menubar, MenubarContent, MenubarItem, MenubarMenu, MenubarTrigger } from './menubar';
+
+const meta: Meta<typeof Menubar> = {
+  title: 'Components/Ui/Menubar',
+  component: Menubar,
 };
 
 export default meta;
-type Story = StoryObj<typeof menubar>;
+type Story = StoryObj<typeof Menubar>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    children: (
+      <MenubarMenu>
+        <MenubarTrigger>File</MenubarTrigger>
+        <MenubarContent>
+          <MenubarItem>New Tab</MenubarItem>
+          <MenubarItem>New Window</MenubarItem>
+        </MenubarContent>
+      </MenubarMenu>
+    ),
   },
 };

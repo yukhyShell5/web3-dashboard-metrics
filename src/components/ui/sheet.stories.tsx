@@ -1,16 +1,32 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { sheet } from './sheet';
 
-const meta: Meta<typeof sheet> = {
-  title: 'Components/Ui/sheet',
-  component: sheet,
+import type { Meta, StoryObj } from '@storybook/react';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from './sheet';
+import { Button } from './button';
+
+const meta: Meta<typeof Sheet> = {
+  title: 'Components/Ui/Sheet',
+  component: Sheet,
 };
 
 export default meta;
-type Story = StoryObj<typeof sheet>;
+type Story = StoryObj<typeof Sheet>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    children: (
+      <>
+        <SheetTrigger asChild>
+          <Button variant="outline">Open Sheet</Button>
+        </SheetTrigger>
+        <SheetContent>
+          <SheetHeader>
+            <SheetTitle>Sheet Title</SheetTitle>
+            <SheetDescription>
+              Sheet description goes here.
+            </SheetDescription>
+          </SheetHeader>
+        </SheetContent>
+      </>
+    ),
   },
 };
