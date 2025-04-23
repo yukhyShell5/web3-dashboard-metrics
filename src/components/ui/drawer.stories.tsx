@@ -24,7 +24,7 @@ export const Default: Story = {
             <DrawerDescription>
               Drawer description goes here.
             </DrawerDescription>
-          </DrawerContent>
+          </DrawerHeader>
         </DrawerContent>
       </>
     ),
