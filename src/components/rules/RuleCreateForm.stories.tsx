@@ -1,5 +1,6 @@
+
 import type { Meta, StoryObj } from '@storybook/react';
-import { RuleCreateForm } from './RuleCreateForm';
+import RuleCreateForm from './RuleCreateForm';
 
 const meta: Meta<typeof RuleCreateForm> = {
   title: 'Components/Rules/RuleCreateForm',
@@ -11,6 +12,6 @@ type Story = StoryObj<typeof RuleCreateForm>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    // Add any necessary props here
   },
 };

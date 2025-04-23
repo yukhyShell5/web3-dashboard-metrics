@@ -1,5 +1,6 @@
+
 import type { Meta, StoryObj } from '@storybook/react';
-import { AddressesTab } from './AddressesTab';
+import AddressesTab from './AddressesTab';
 
 const meta: Meta<typeof AddressesTab> = {
   title: 'Components/Settings/AddressesTab',
@@ -11,6 +12,6 @@ type Story = StoryObj<typeof AddressesTab>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    // Add any necessary props here
   },
 };

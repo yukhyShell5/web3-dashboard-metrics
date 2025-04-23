@@ -1,16 +1,17 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { breadcrumb } from './breadcrumb';
 
-const meta: Meta<typeof breadcrumb> = {
-  title: 'Components/Ui/breadcrumb',
-  component: breadcrumb,
+import type { Meta, StoryObj } from '@storybook/react';
+import { Breadcrumb } from './breadcrumb';
+
+const meta: Meta<typeof Breadcrumb> = {
+  title: 'Components/Ui/Breadcrumb',
+  component: Breadcrumb,
 };
 
 export default meta;
-type Story = StoryObj<typeof breadcrumb>;
+type Story = StoryObj<typeof Breadcrumb>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    // Add any necessary props here
   },
 };

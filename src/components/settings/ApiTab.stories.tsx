@@ -1,5 +1,6 @@
+
 import type { Meta, StoryObj } from '@storybook/react';
-import { ApiTab } from './ApiTab';
+import ApiTab from './ApiTab';
 
 const meta: Meta<typeof ApiTab> = {
   title: 'Components/Settings/ApiTab',
@@ -11,6 +12,6 @@ type Story = StoryObj<typeof ApiTab>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    // Add any necessary props here
   },
 };

@@ -1,5 +1,6 @@
+
 import type { Meta, StoryObj } from '@storybook/react';
-import { RuleStatistics } from './RuleStatistics';
+import RuleStatistics from './RuleStatistics';
 
 const meta: Meta<typeof RuleStatistics> = {
   title: 'Components/Rules/RuleStatistics',
@@ -11,6 +12,6 @@ type Story = StoryObj<typeof RuleStatistics>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    rules: [], // Provide an empty array as default
   },
 };

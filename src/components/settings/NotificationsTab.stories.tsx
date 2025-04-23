@@ -1,5 +1,6 @@
+
 import type { Meta, StoryObj } from '@storybook/react';
-import { NotificationsTab } from './NotificationsTab';
+import NotificationsTab from './NotificationsTab';
 
 const meta: Meta<typeof NotificationsTab> = {
   title: 'Components/Settings/NotificationsTab',
@@ -11,6 +12,6 @@ type Story = StoryObj<typeof NotificationsTab>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    // Add any necessary props here
   },
 };
