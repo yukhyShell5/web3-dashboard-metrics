@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from "@/hooks/use-toast";
 import { WidgetType } from '@/types/widget';
-import { BarChart2Icon, LineChartIcon, PieChartIcon, GaugeIcon, LayoutDashboardIcon, TableIcon, HeatmapIcon, ScatterChartIcon } from 'lucide-react';
+import { BarChart2Icon, LineChartIcon, PieChartIcon, GaugeIcon, LayoutDashboardIcon, TableIcon, GridIcon, ScatterChartIcon } from 'lucide-react';
 
 interface WidgetCreatorProps {
   onAddWidget: (widget: {
@@ -28,7 +27,7 @@ const widgetTypes = [
   { type: 'stat' as WidgetType, title: 'Stat Card', icon: <LayoutDashboardIcon className="h-5 w-5" /> },
   { type: 'gauge' as WidgetType, title: 'Gauge', icon: <GaugeIcon className="h-5 w-5" /> },
   { type: 'table' as WidgetType, title: 'Table', icon: <TableIcon className="h-5 w-5" /> },
-  { type: 'heatmap' as WidgetType, title: 'Heatmap', icon: <HeatmapIcon className="h-5 w-5" /> },
+  { type: 'heatmap' as WidgetType, title: 'Heatmap', icon: <GridIcon className="h-5 w-5" /> },
   { type: 'scatter' as WidgetType, title: 'Scatter Plot', icon: <ScatterChartIcon className="h-5 w-5" /> },
 ];
 
