@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DashboardLayout, Widget } from '@/types/dashboard';
+import { WidgetFilter } from '@/types/widget';
 import { v4 as uuidv4 } from 'uuid';
 
 interface DashboardState {
@@ -18,11 +19,14 @@ interface DashboardState {
   updateWidget: (dashboardId: string, widgetId: string, data: Partial<Widget>) => void;
   removeWidget: (dashboardId: string, widgetId: string) => void;
   updateWidgetPositions: (dashboardId: string, layouts: Widget['position'][]) => void;
+  updateWidgetFilters: (dashboardId: string, widgetId: string, filters: WidgetFilter[]) => void;
+  setDashboardVariables: (dashboardId: string, variables: Record<string, any>) => void;
+  setDashboardRefreshSettings: (dashboardId: string, autoRefresh: boolean, interval?: number) => void;
   exportDashboard: (id: string) => string;
   importDashboard: (jsonConfig: string) => string | null;
 }
 
-// Sample default widgets
+// Sample default widgets with updated types
 const createDefaultWidgets = (): Widget[] => [
   {
     id: uuidv4(),
@@ -34,7 +38,13 @@ const createDefaultWidgets = (): Widget[] => [
       dataKey: 'value',
       xDataKey: 'name',
       colorScheme: ['#3b82f6', '#10b981', '#f59e0b'],
-      showLegend: true
+      showLegend: true,
+      filters: [],
+      autoRefresh: false
+    },
+    dataSourceConfig: {
+      type: 'mock',
+      refreshInterval: 60000
     }
   },
   {
@@ -47,7 +57,10 @@ const createDefaultWidgets = (): Widget[] => [
       dataKey: 'count',
       xDataKey: 'date',
       colorScheme: ['#8b5cf6'],
-      showLegend: false
+      showLegend: false,
+      filters: [],
+      autoRefresh: true,
+      refreshInterval: 30000
     }
   },
   {
@@ -58,16 +71,31 @@ const createDefaultWidgets = (): Widget[] => [
     config: {
       dataSource: 'resources',
       dataKey: 'value',
-      nameKey: 'name',
+      xDataKey: 'name',
       colorScheme: ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'],
-      showLegend: true
+      showLegend: true,
+      filters: []
+    }
+  },
+  {
+    id: uuidv4(),
+    type: 'gauge',
+    title: 'System Health',
+    position: { i: uuidv4(), x: 4, y: 4, w: 4, h: 4, minW: 2, minH: 3 },
+    config: {
+      dataSource: 'system',
+      min: 0,
+      max: 100,
+      colorScheme: ['#10b981', '#f59e0b', '#ef4444'],
+      autoRefresh: true,
+      refreshInterval: 15000
     }
   },
   {
     id: uuidv4(),
     type: 'stat',
     title: 'Total Transactions',
-    position: { i: uuidv4(), x: 4, y: 4, w: 4, h: 2, minW: 2, minH: 1 },
+    position: { i: uuidv4(), x: 8, y: 4, w: 4, h: 2, minW: 2, minH: 1 },
     config: {
       dataSource: 'stats',
       value: 'totalTransactions',
@@ -75,23 +103,10 @@ const createDefaultWidgets = (): Widget[] => [
       trend: '+12.5%',
       trendDirection: 'up'
     }
-  },
-  {
-    id: uuidv4(),
-    type: 'stat',
-    title: 'Active Alerts',
-    position: { i: uuidv4(), x: 8, y: 4, w: 4, h: 2, minW: 2, minH: 1 },
-    config: {
-      dataSource: 'stats',
-      value: 'activeAlerts',
-      icon: 'AlertTriangle',
-      trend: '-5.2%',
-      trendDirection: 'down'
-    }
   }
 ];
 
-// Initial dashboards
+// Initial dashboards with updated properties
 const initialDashboards: DashboardLayout[] = [
   {
     id: '1',
@@ -101,6 +116,12 @@ const initialDashboards: DashboardLayout[] = [
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     isPrimary: true,
+    autoRefresh: false,
+    refreshInterval: 60000,
+    variables: {
+      timeRange: '24h',
+      walletAddress: '0x1234...'
+    }
   },
   {
     id: '2',
@@ -110,6 +131,10 @@ const initialDashboards: DashboardLayout[] = [
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     isPrimary: false,
+    autoRefresh: false,
+    variables: {
+      contractAddress: '0xabcd...'
+    }
   }
 ];
 
@@ -148,6 +173,8 @@ export const useDashboardStore = create<DashboardState>()(
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           widgets: [],
+          variables: {},
+          autoRefresh: false
         };
         
         set({
@@ -268,6 +295,66 @@ export const useDashboardStore = create<DashboardState>()(
         set({ dashboards });
       },
       
+      updateWidgetFilters: (dashboardId, widgetId, filters) => {
+        const dashboards = get().dashboards.map(dashboard => {
+          if (dashboard.id === dashboardId) {
+            return {
+              ...dashboard,
+              widgets: dashboard.widgets.map(widget => {
+                if (widget.id === widgetId) {
+                  return {
+                    ...widget,
+                    config: {
+                      ...widget.config,
+                      filters
+                    }
+                  };
+                }
+                return widget;
+              }),
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return dashboard;
+        });
+        
+        set({ dashboards });
+      },
+      
+      setDashboardVariables: (dashboardId, variables) => {
+        const dashboards = get().dashboards.map(dashboard => {
+          if (dashboard.id === dashboardId) {
+            return {
+              ...dashboard,
+              variables: {
+                ...dashboard.variables,
+                ...variables
+              },
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return dashboard;
+        });
+        
+        set({ dashboards });
+      },
+      
+      setDashboardRefreshSettings: (dashboardId, autoRefresh, interval) => {
+        const dashboards = get().dashboards.map(dashboard => {
+          if (dashboard.id === dashboardId) {
+            return {
+              ...dashboard,
+              autoRefresh,
+              ...(interval !== undefined ? { refreshInterval: interval } : {}),
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return dashboard;
+        });
+        
+        set({ dashboards });
+      },
+      
       exportDashboard: (id) => {
         const dashboard = get().getDashboardById(id);
         if (!dashboard) return '';
@@ -288,7 +375,9 @@ export const useDashboardStore = create<DashboardState>()(
             id,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            isPrimary: false
+            isPrimary: false,
+            variables: dashboard.variables || {},
+            autoRefresh: dashboard.autoRefresh || false
           };
           
           set({

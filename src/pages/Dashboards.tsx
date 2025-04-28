@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SearchIcon, EditIcon, EyeIcon, StarIcon } from 'lucide-react';
+import { SearchIcon, EditIcon, EyeIcon, StarIcon, RefreshCwIcon } from 'lucide-react';
 import { useDashboardStore } from '@/services/dashboardStore';
 import { DashboardLayout } from '@/types/dashboard';
 import DashboardFactory from '@/components/dashboard/DashboardFactory';
@@ -68,6 +68,23 @@ const Dashboards = () => {
     navigate(`/dashboards/edit/${dashboardId}`);
   };
 
+  const getWidgetTypeIcons = (dashboard: DashboardLayout) => {
+    const types = new Set(dashboard.widgets.map(w => w.type));
+    const icons: JSX.Element[] = [];
+    
+    if (types.has('bar')) icons.push(<div key="bar" className="h-3 w-3 bg-blue-500 rounded-sm" />);
+    if (types.has('line')) icons.push(<div key="line" className="h-3 w-3 bg-purple-500 rounded-sm" />);
+    if (types.has('pie')) icons.push(<div key="pie" className="h-3 w-3 bg-green-500 rounded-sm" />);
+    if (types.has('gauge')) icons.push(<div key="gauge" className="h-3 w-3 bg-orange-500 rounded-sm" />);
+    if (types.has('heatmap')) icons.push(<div key="heatmap" className="h-3 w-3 bg-red-500 rounded-sm" />);
+    if (types.has('scatter')) icons.push(<div key="scatter" className="h-3 w-3 bg-teal-500 rounded-sm" />);
+    if (types.has('stat')) icons.push(<div key="stat" className="h-3 w-3 bg-gray-500 rounded-sm" />);
+    
+    return icons.length > 0 ? (
+      <div className="flex space-x-1">{icons}</div>
+    ) : null;
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -107,21 +124,37 @@ const Dashboards = () => {
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle>{dashboard.title}</CardTitle>
-                {dashboard.isPrimary && (
-                  <StarIcon className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                )}
+                <div className="flex space-x-1 items-center">
+                  {dashboard.isPrimary && (
+                    <StarIcon className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                  )}
+                  {dashboard.autoRefresh && (
+                    <RefreshCwIcon className="h-4 w-4 text-blue-500" />
+                  )}
+                </div>
               </div>
               <CardDescription>{dashboard.description}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center justify-between text-sm">
-                <div className="text-muted-foreground flex items-center gap-1">
-                  {dashboard.widgets?.length || 0} widgets
+                <div className="text-muted-foreground flex items-center gap-2">
+                  <span>{dashboard.widgets?.length || 0} widgets</span>
+                  {getWidgetTypeIcons(dashboard)}
                 </div>
                 <div className="text-muted-foreground">
                   Updated {new Date(dashboard.updatedAt).toLocaleDateString()}
                 </div>
               </div>
+              {dashboard.variables && Object.keys(dashboard.variables).length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {Object.entries(dashboard.variables).map(([key, value]) => (
+                    <div key={key} className="text-xs bg-muted px-1.5 py-0.5 rounded-md">
+                      {key}={String(value).substring(0, 10)}
+                      {String(value).length > 10 ? '...' : ''}
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
             <CardFooter className="pt-2 justify-between">
               <div>

@@ -1,33 +1,5 @@
 
-export type WidgetType = 'bar' | 'line' | 'pie' | 'area' | 'stat' | 'table';
-
-export interface WidgetPosition {
-  i: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  minW?: number;
-  minH?: number;
-  maxW?: number;
-  maxH?: number;
-}
-
-export interface Widget {
-  id: string;
-  type: WidgetType;
-  title: string;
-  position: WidgetPosition;
-  config: {
-    dataSource?: string;
-    dataKey?: string;
-    xDataKey?: string;
-    colorScheme?: string[];
-    showLegend?: boolean;
-    stacked?: boolean;
-    [key: string]: any;
-  };
-}
+import { Widget } from './widget';
 
 export interface DashboardLayout {
   id: string;
@@ -37,6 +9,16 @@ export interface DashboardLayout {
   updatedAt: string;
   isPrimary: boolean;
   widgets: Widget[];
+  variables?: Record<string, any>; // Global variables that can be used across widgets
+  refreshInterval?: number; // Global refresh interval in milliseconds
+  autoRefresh?: boolean; // Whether to auto refresh the entire dashboard
 }
 
 export type DashboardMode = 'view' | 'edit';
+
+export interface DashboardContextType {
+  variables: Record<string, any>;
+  setVariable: (key: string, value: any) => void;
+  refreshWidget: (widgetId: string) => void;
+  refreshAllWidgets: () => void;
+}
