@@ -2,43 +2,25 @@
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeftIcon, PlusIcon, SaveIcon, BarChart2Icon, LineChartIcon, PieChartIcon, LayoutDashboardIcon } from 'lucide-react';
+import { ArrowLeftIcon, PlusIcon, SaveIcon } from 'lucide-react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import Widget from './Widget';
+import WidgetCreator from './WidgetCreator';
 import { useDashboardStore } from '@/services/dashboardStore';
 import { DashboardLayout } from '@/types/dashboard';
-import { Widget as WidgetType } from '@/types/widget';
-import { WidgetType as WidgetTypeEnum } from '@/types/widget';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Widget as WidgetType, WidgetType as WidgetTypeEnum } from '@/types/widget';
 import { toast } from "@/hooks/use-toast";
 import { DashboardProvider } from '@/contexts/DashboardContext';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import GlobalFilters from './GlobalFilters';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
-
-// Available widget templates
-const widgetTemplates = [
-  { type: 'bar', title: 'Bar Chart', icon: <BarChart2Icon className="h-6 w-6" /> },
-  { type: 'line', title: 'Line Chart', icon: <LineChartIcon className="h-6 w-6" /> },
-  { type: 'pie', title: 'Pie Chart', icon: <PieChartIcon className="h-6 w-6" /> },
-  { type: 'stat', title: 'Stat Card', icon: <LayoutDashboardIcon className="h-6 w-6" /> },
-];
-
-const colorSchemes = [
-  { id: 'blue', colors: ['#3b82f6', '#60a5fa', '#93c5fd'] },
-  { id: 'purple', colors: ['#8b5cf6', '#a78bfa', '#c4b5fd'] },
-  { id: 'green', colors: ['#10b981', '#34d399', '#6ee7b7'] },
-  { id: 'orange', colors: ['#f59e0b', '#fbbf24', '#fcd34d'] },
-  { id: 'multi', colors: ['#3b82f6', '#8b5cf6', '#10b981', '#f59e0b'] },
-];
 
 const DashboardEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -54,12 +36,7 @@ const DashboardEdit: React.FC = () => {
   
   const [title, setTitle] = useState(dashboard?.title || '');
   const [description, setDescription] = useState(dashboard?.description || '');
-  const [isWidgetDialogOpen, setIsWidgetDialogOpen] = useState(false);
-  const [currentWidgetConfig, setCurrentWidgetConfig] = useState({
-    type: 'bar' as WidgetTypeEnum,
-    title: 'New Widget',
-    colorScheme: 'blue'
-  });
+  const [isWidgetCreatorOpen, setIsWidgetCreatorOpen] = useState(false);
   
   if (!dashboard) {
     return (
@@ -96,34 +73,53 @@ const DashboardEdit: React.FC = () => {
     navigate(`/dashboards/view/${dashboard.id}`);
   };
   
-  const handleAddWidget = () => {
-    const selectedColors = colorSchemes.find(scheme => scheme.id === currentWidgetConfig.colorScheme)?.colors || colorSchemes[0].colors;
-    
+  const handleAddWidget = (widgetConfig: {
+    title: string;
+    type: WidgetTypeEnum;
+    config: Record<string, any>;
+  }) => {
     // Find the maximum y-coordinate to place the new widget at the bottom
     const maxY = dashboard.widgets.reduce((max, widget) => {
       return Math.max(max, widget.position.y + widget.position.h);
     }, 0);
     
+    // Determine widget size based on type
+    let w = 6, h = 4; // Default size
+    
+    switch (widgetConfig.type) {
+      case 'pie':
+      case 'gauge':
+        w = 4; h = 4;
+        break;
+      case 'stat':
+        w = 3; h = 2;
+        break;
+      case 'table':
+        w = 8; h = 6;
+        break;
+      case 'heatmap':
+      case 'scatter':
+        w = 6; h = 5;
+        break;
+    }
+    
     const newWidget: Omit<WidgetType, 'id'> = {
-      type: currentWidgetConfig.type,
-      title: currentWidgetConfig.title || 'New Widget',
+      type: widgetConfig.type,
+      title: widgetConfig.title,
       position: {
         i: 'temp-id', // Will be replaced with actual ID
         x: 0,
         y: maxY,
-        w: 6,
-        h: 4,
+        w,
+        h,
         minW: 2,
         minH: 2
       },
-      config: {
-        colorScheme: selectedColors,
-        showLegend: true
-      }
+      config: widgetConfig.config
     };
     
     addWidget(dashboard.id, newWidget);
-    setIsWidgetDialogOpen(false);
+    setIsWidgetCreatorOpen(false);
     toast({
       title: "Widget added",
       description: "New widget has been added to your dashboard"
@@ -182,11 +178,16 @@ const DashboardEdit: React.FC = () => {
             </div>
           </div>
           
+          {/* Global filters section */}
+          <Card className="p-4">
+            <GlobalFilters />
+          </Card>
+          
           <div className="bg-card rounded-lg border shadow-sm p-4">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold">Layout Editor</h2>
               <Button
-                onClick={() => setIsWidgetDialogOpen(true)}
+                onClick={() => setIsWidgetCreatorOpen(true)}
                 className="flex items-center gap-2"
               >
                 <PlusIcon className="h-4 w-4" />
@@ -220,7 +221,7 @@ const DashboardEdit: React.FC = () => {
               <div className="flex flex-col items-center justify-center h-64 border border-dashed rounded-lg">
                 <p className="text-muted-foreground mb-4">No widgets added yet</p>
                 <Button
-                  onClick={() => setIsWidgetDialogOpen(true)}
+                  onClick={() => setIsWidgetCreatorOpen(true)}
                   className="flex items-center gap-2"
                 >
                   <PlusIcon className="h-4 w-4" />
@@ -231,106 +232,12 @@ const DashboardEdit: React.FC = () => {
           </div>
         </div>
         
-        <Dialog open={isWidgetDialogOpen} onOpenChange={setIsWidgetDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
-            <DialogHeader>
-              <DialogTitle>Add New Widget</DialogTitle>
-              <DialogDescription>
-                Create a new widget to add to your dashboard.
-              </DialogDescription>
-            </DialogHeader>
-            
-            <Tabs defaultValue="type" className="w-full">
-              <TabsList className="grid grid-cols-2 mb-4">
-                <TabsTrigger value="type">Widget Type</TabsTrigger>
-                <TabsTrigger value="config">Configuration</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="type" className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  {widgetTemplates.map((template) => (
-                    <Card 
-                      key={template.type}
-                      className={`cursor-pointer transition-all ${
-                        currentWidgetConfig.type === template.type ? 'ring-2 ring-primary' : ''
-                      }`}
-                      onClick={() => setCurrentWidgetConfig({
-                        ...currentWidgetConfig,
-                        type: template.type as WidgetTypeEnum
-                      })}
-                    >
-                      <CardContent className="flex flex-col items-center justify-center p-6">
-                        {template.icon}
-                        <p className="mt-2 font-medium">{template.title}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="config" className="space-y-4">
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="widget-title" className="text-right">
-                      Title
-                    </Label>
-                    <Input
-                      id="widget-title"
-                      value={currentWidgetConfig.title}
-                      onChange={(e) => setCurrentWidgetConfig({
-                        ...currentWidgetConfig,
-                        title: e.target.value
-                      })}
-                      className="col-span-3"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="color-scheme" className="text-right">
-                      Color Scheme
-                    </Label>
-                    <Select 
-                      value={currentWidgetConfig.colorScheme}
-                      onValueChange={(value) => setCurrentWidgetConfig({
-                        ...currentWidgetConfig,
-                        colorScheme: value
-                      })}
-                    >
-                      <SelectTrigger className="col-span-3">
-                        <SelectValue placeholder="Select color scheme" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {colorSchemes.map((scheme) => (
-                          <SelectItem key={scheme.id} value={scheme.id}>
-                            <div className="flex items-center gap-2">
-                              <div className="flex">
-                                {scheme.colors.map((color, i) => (
-                                  <div 
-                                    key={i}
-                                    className="w-4 h-4 rounded-full ml-[-0.375rem] border border-white"
-                                    style={{ backgroundColor: color, zIndex: scheme.colors.length - i }}
-                                  />
-                                ))}
-                              </div>
-                              <span className="capitalize">{scheme.id}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsWidgetDialogOpen(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleAddWidget}>
-                Add Widget
-              </Button>
-            </DialogFooter>
+        <Dialog open={isWidgetCreatorOpen} onOpenChange={setIsWidgetCreatorOpen}>
+          <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+            <WidgetCreator
+              onAddWidget={handleAddWidget}
+              onCancel={() => setIsWidgetCreatorOpen(false)}
+            />
           </DialogContent>
         </Dialog>
       </DndProvider>
