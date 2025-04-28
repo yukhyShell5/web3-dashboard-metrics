@@ -15,9 +15,12 @@ import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import Widget from './Widget';
 import { useDashboardStore } from '@/services/dashboardStore';
-import { DashboardLayout, Widget as WidgetType, WidgetType as WidgetTypeEnum } from '@/types/dashboard';
+import { DashboardLayout } from '@/types/dashboard';
+import { Widget as WidgetType } from '@/types/widget';
+import { WidgetType as WidgetTypeEnum } from '@/types/widget';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from "@/hooks/use-toast";
+import { DashboardProvider } from '@/contexts/DashboardContext';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -132,86 +135,53 @@ const DashboardEdit: React.FC = () => {
   };
   
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center space-x-4">
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={() => navigate('/dashboards')}
-            >
-              <ArrowLeftIcon className="h-4 w-4" />
-            </Button>
-            <div>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="text-2xl font-bold bg-transparent border-none focus-visible:ring-0 p-0 h-auto"
-                placeholder="Dashboard Title"
-              />
-              <Input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="text-sm text-muted-foreground bg-transparent border-none focus-visible:ring-0 p-0 h-auto"
-                placeholder="Add a description"
-              />
-            </div>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button 
-              variant="outline"
-              onClick={() => navigate(`/dashboards/view/${dashboard.id}`)}
-            >
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleSave}
-              className="flex items-center gap-2"
-            >
-              <SaveIcon className="h-4 w-4" />
-              Save Changes
-            </Button>
-          </div>
-        </div>
-        
-        <div className="bg-card rounded-lg border shadow-sm p-4">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">Layout Editor</h2>
-            <Button
-              onClick={() => setIsWidgetDialogOpen(true)}
-              className="flex items-center gap-2"
-            >
-              <PlusIcon className="h-4 w-4" />
-              Add Widget
-            </Button>
-          </div>
-          
-          <ResponsiveGridLayout
-            className="layout"
-            layouts={layouts}
-            breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-            cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
-            rowHeight={100}
-            onLayoutChange={handleLayoutChange}
-            isDraggable={true}
-            isResizable={true}
-            margin={[16, 16]}
-          >
-            {dashboard.widgets.map(widget => (
-              <div key={widget.id} data-grid={widget.position}>
-                <Widget 
-                  widget={widget} 
-                  isEditing={true} 
-                  onRemove={handleRemoveWidget} 
+    <DashboardProvider initialVariables={dashboard.variables}>
+      <DndProvider backend={HTML5Backend}>
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center space-x-4">
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => navigate('/dashboards')}
+              >
+                <ArrowLeftIcon className="h-4 w-4" />
+              </Button>
+              <div>
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="text-2xl font-bold bg-transparent border-none focus-visible:ring-0 p-0 h-auto"
+                  placeholder="Dashboard Title"
+                />
+                <Input
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  className="text-sm text-muted-foreground bg-transparent border-none focus-visible:ring-0 p-0 h-auto"
+                  placeholder="Add a description"
                 />
               </div>
-            ))}
-          </ResponsiveGridLayout>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Button 
+                variant="outline"
+                onClick={() => navigate(`/dashboards/view/${dashboard.id}`)}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSave}
+                className="flex items-center gap-2"
+              >
+                <SaveIcon className="h-4 w-4" />
+                Save Changes
+              </Button>
+            </div>
+          </div>
           
-          {dashboard.widgets.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-64 border border-dashed rounded-lg">
-              <p className="text-muted-foreground mb-4">No widgets added yet</p>
+          <div className="bg-card rounded-lg border shadow-sm p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">Layout Editor</h2>
               <Button
                 onClick={() => setIsWidgetDialogOpen(true)}
                 className="flex items-center gap-2"
@@ -220,113 +190,148 @@ const DashboardEdit: React.FC = () => {
                 Add Widget
               </Button>
             </div>
-          )}
-        </div>
-      </div>
-      
-      <Dialog open={isWidgetDialogOpen} onOpenChange={setIsWidgetDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Add New Widget</DialogTitle>
-            <DialogDescription>
-              Create a new widget to add to your dashboard.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <Tabs defaultValue="type" className="w-full">
-            <TabsList className="grid grid-cols-2 mb-4">
-              <TabsTrigger value="type">Widget Type</TabsTrigger>
-              <TabsTrigger value="config">Configuration</TabsTrigger>
-            </TabsList>
             
-            <TabsContent value="type" className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                {widgetTemplates.map((template) => (
-                  <Card 
-                    key={template.type}
-                    className={`cursor-pointer transition-all ${
-                      currentWidgetConfig.type === template.type ? 'ring-2 ring-primary' : ''
-                    }`}
-                    onClick={() => setCurrentWidgetConfig({
-                      ...currentWidgetConfig,
-                      type: template.type as WidgetTypeEnum
-                    })}
-                  >
-                    <CardContent className="flex flex-col items-center justify-center p-6">
-                      {template.icon}
-                      <p className="mt-2 font-medium">{template.title}</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="config" className="space-y-4">
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="widget-title" className="text-right">
-                    Title
-                  </Label>
-                  <Input
-                    id="widget-title"
-                    value={currentWidgetConfig.title}
-                    onChange={(e) => setCurrentWidgetConfig({
-                      ...currentWidgetConfig,
-                      title: e.target.value
-                    })}
-                    className="col-span-3"
+            <ResponsiveGridLayout
+              className="layout"
+              layouts={layouts}
+              breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
+              cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
+              rowHeight={100}
+              onLayoutChange={handleLayoutChange}
+              isDraggable={true}
+              isResizable={true}
+              margin={[16, 16]}
+            >
+              {dashboard.widgets.map(widget => (
+                <div key={widget.id} data-grid={widget.position}>
+                  <Widget 
+                    widget={widget} 
+                    isEditing={true} 
+                    onRemove={handleRemoveWidget} 
                   />
                 </div>
-                
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="color-scheme" className="text-right">
-                    Color Scheme
-                  </Label>
-                  <Select 
-                    value={currentWidgetConfig.colorScheme}
-                    onValueChange={(value) => setCurrentWidgetConfig({
-                      ...currentWidgetConfig,
-                      colorScheme: value
-                    })}
-                  >
-                    <SelectTrigger className="col-span-3">
-                      <SelectValue placeholder="Select color scheme" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {colorSchemes.map((scheme) => (
-                        <SelectItem key={scheme.id} value={scheme.id}>
-                          <div className="flex items-center gap-2">
-                            <div className="flex">
-                              {scheme.colors.map((color, i) => (
-                                <div 
-                                  key={i}
-                                  className="w-4 h-4 rounded-full ml-[-0.375rem] border border-white"
-                                  style={{ backgroundColor: color, zIndex: scheme.colors.length - i }}
-                                />
-                              ))}
-                            </div>
-                            <span className="capitalize">{scheme.id}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              ))}
+            </ResponsiveGridLayout>
+            
+            {dashboard.widgets.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-64 border border-dashed rounded-lg">
+                <p className="text-muted-foreground mb-4">No widgets added yet</p>
+                <Button
+                  onClick={() => setIsWidgetDialogOpen(true)}
+                  className="flex items-center gap-2"
+                >
+                  <PlusIcon className="h-4 w-4" />
+                  Add Widget
+                </Button>
               </div>
-            </TabsContent>
-          </Tabs>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsWidgetDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddWidget}>
-              Add Widget
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </DndProvider>
+            )}
+          </div>
+        </div>
+        
+        <Dialog open={isWidgetDialogOpen} onOpenChange={setIsWidgetDialogOpen}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle>Add New Widget</DialogTitle>
+              <DialogDescription>
+                Create a new widget to add to your dashboard.
+              </DialogDescription>
+            </DialogHeader>
+            
+            <Tabs defaultValue="type" className="w-full">
+              <TabsList className="grid grid-cols-2 mb-4">
+                <TabsTrigger value="type">Widget Type</TabsTrigger>
+                <TabsTrigger value="config">Configuration</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="type" className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  {widgetTemplates.map((template) => (
+                    <Card 
+                      key={template.type}
+                      className={`cursor-pointer transition-all ${
+                        currentWidgetConfig.type === template.type ? 'ring-2 ring-primary' : ''
+                      }`}
+                      onClick={() => setCurrentWidgetConfig({
+                        ...currentWidgetConfig,
+                        type: template.type as WidgetTypeEnum
+                      })}
+                    >
+                      <CardContent className="flex flex-col items-center justify-center p-6">
+                        {template.icon}
+                        <p className="mt-2 font-medium">{template.title}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="config" className="space-y-4">
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="widget-title" className="text-right">
+                      Title
+                    </Label>
+                    <Input
+                      id="widget-title"
+                      value={currentWidgetConfig.title}
+                      onChange={(e) => setCurrentWidgetConfig({
+                        ...currentWidgetConfig,
+                        title: e.target.value
+                      })}
+                      className="col-span-3"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="color-scheme" className="text-right">
+                      Color Scheme
+                    </Label>
+                    <Select 
+                      value={currentWidgetConfig.colorScheme}
+                      onValueChange={(value) => setCurrentWidgetConfig({
+                        ...currentWidgetConfig,
+                        colorScheme: value
+                      })}
+                    >
+                      <SelectTrigger className="col-span-3">
+                        <SelectValue placeholder="Select color scheme" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {colorSchemes.map((scheme) => (
+                          <SelectItem key={scheme.id} value={scheme.id}>
+                            <div className="flex items-center gap-2">
+                              <div className="flex">
+                                {scheme.colors.map((color, i) => (
+                                  <div 
+                                    key={i}
+                                    className="w-4 h-4 rounded-full ml-[-0.375rem] border border-white"
+                                    style={{ backgroundColor: color, zIndex: scheme.colors.length - i }}
+                                  />
+                                ))}
+                              </div>
+                              <span className="capitalize">{scheme.id}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+            
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsWidgetDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleAddWidget}>
+                Add Widget
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </DndProvider>
+    </DashboardProvider>
   );
 };
 

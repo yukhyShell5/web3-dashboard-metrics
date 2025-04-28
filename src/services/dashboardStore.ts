@@ -1,8 +1,8 @@
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { DashboardLayout, Widget } from '@/types/dashboard';
-import { WidgetFilter } from '@/types/widget';
+import { DashboardLayout } from '@/types/dashboard';
+import { Widget, WidgetFilter } from '@/types/widget';
 import { v4 as uuidv4 } from 'uuid';
 
 interface DashboardState {

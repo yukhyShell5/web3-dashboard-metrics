@@ -22,3 +22,6 @@ export interface DashboardContextType {
   refreshWidget: (widgetId: string) => void;
   refreshAllWidgets: () => void;
 }
+
+// Re-export Widget type from widget.d.ts to make it available
+export { Widget, WidgetType } from './widget';
