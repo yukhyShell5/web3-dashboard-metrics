@@ -10,6 +10,7 @@ interface PieChartProps {
   onSeverityClick?: (severity: string) => void;
   dataKey?: string;
   nameKey?: string;
+  onSectorClick?: (data: any) => void;
 }
 
 const PieChart = ({ 
@@ -19,8 +20,17 @@ const PieChart = ({
   activeSeverity, 
   onSeverityClick,
   dataKey = "value",
-  nameKey = "name"
+  nameKey = "name",
+  onSectorClick
 }: PieChartProps) => {
+  const handleClick = (data: any) => {
+    if (onSectorClick) {
+      onSectorClick(data);
+    } else if (onSeverityClick && data.name) {
+      onSeverityClick(data.name.toLowerCase());
+    }
+  };
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <RechartsPieChart>
@@ -33,7 +43,7 @@ const PieChart = ({
           fill="#8884d8"
           dataKey={dataKey}
           nameKey={nameKey}
-          onClick={(data) => onSeverityClick?.(data.name.toLowerCase())}
+          onClick={handleClick}
         >
           {data.map((entry, index) => (
             <Cell
@@ -46,7 +56,11 @@ const PieChart = ({
         </Pie>
         <Tooltip />
         <Legend
-          onClick={(e) => onSeverityClick?.(e.value.toLowerCase())}
+          onClick={(e) => {
+            if (onSeverityClick) {
+              onSeverityClick(e.value.toLowerCase())
+            }
+          }}
           formatter={(value) => (
             <span className={`cursor-pointer ${value.toLowerCase() === activeSeverity ? 'font-bold' : ''}`}>
               {value}

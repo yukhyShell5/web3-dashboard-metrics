@@ -12,9 +12,23 @@ interface BarChartProps {
   }[];
   height?: number;
   stacked?: boolean;
+  onElementClick?: (data: any) => void;
 }
 
-const BarChart: React.FC<BarChartProps> = ({ data, xDataKey, bars, height = 300, stacked = false }) => {
+const BarChart: React.FC<BarChartProps> = ({ 
+  data, 
+  xDataKey, 
+  bars, 
+  height = 300, 
+  stacked = false,
+  onElementClick
+}) => {
+  const handleClick = (data: any) => {
+    if (onElementClick && data) {
+      onElementClick(data);
+    }
+  };
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <RechartsBarChart
@@ -25,6 +39,7 @@ const BarChart: React.FC<BarChartProps> = ({ data, xDataKey, bars, height = 300,
           left: 0,
           bottom: 0,
         }}
+        onClick={(e) => e?.activePayload && handleClick(e.activePayload[0]?.payload)}
       >
         <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
         <XAxis 
@@ -53,6 +68,8 @@ const BarChart: React.FC<BarChartProps> = ({ data, xDataKey, bars, height = 300,
             fill={bar.fill} 
             name={bar.name || bar.dataKey} 
             stackId={stacked ? "stack" : undefined}
+            onClick={handleClick}
+            cursor="pointer"
           />
         ))}
       </RechartsBarChart>

@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DashboardLayout } from '@/types/dashboard';
@@ -22,11 +21,11 @@ interface DashboardState {
   updateWidgetFilters: (dashboardId: string, widgetId: string, filters: WidgetFilter[]) => void;
   setDashboardVariables: (dashboardId: string, variables: Record<string, any>) => void;
   setDashboardRefreshSettings: (dashboardId: string, autoRefresh: boolean, interval?: number) => void;
+  setDashboardGlobalFilters: (dashboardId: string, filters: WidgetFilter[]) => void;
   exportDashboard: (id: string) => string;
   importDashboard: (jsonConfig: string) => string | null;
 }
 
-// Sample default widgets with updated types
 const createDefaultWidgets = (): Widget[] => [
   {
     id: uuidv4(),
@@ -106,7 +105,6 @@ const createDefaultWidgets = (): Widget[] => [
   }
 ];
 
-// Initial dashboards with updated properties
 const initialDashboards: DashboardLayout[] = [
   {
     id: '1',
@@ -355,6 +353,21 @@ export const useDashboardStore = create<DashboardState>()(
         set({ dashboards });
       },
       
+      setDashboardGlobalFilters: (dashboardId, filters) => {
+        const dashboards = get().dashboards.map(dashboard => {
+          if (dashboard.id === dashboardId) {
+            return {
+              ...dashboard,
+              globalFilters: filters,
+              updatedAt: new Date().toISOString()
+            };
+          }
+          return dashboard;
+        });
+        
+        set({ dashboards });
+      },
+      
       exportDashboard: (id) => {
         const dashboard = get().getDashboardById(id);
         if (!dashboard) return '';
@@ -364,7 +377,6 @@ export const useDashboardStore = create<DashboardState>()(
       importDashboard: (jsonConfig) => {
         try {
           const dashboard = JSON.parse(jsonConfig) as DashboardLayout;
-          // Validate the dashboard structure here
           if (!dashboard.title || !dashboard.widgets) {
             throw new Error('Invalid dashboard configuration');
           }

@@ -1,10 +1,10 @@
-
-import { useState, useEffect, useCallback } from 'react';
-import { Widget, WidgetDataSource } from '@/types/widget';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Widget, WidgetDataSource, WidgetFilter } from '@/types/widget';
 
 interface UseWidgetDataProps {
   widget: Widget;
   forceRefresh?: number; // timestamp to force refresh
+  globalFilters?: WidgetFilter[]; // added global filters
 }
 
 interface UseWidgetDataResult {
@@ -15,7 +15,37 @@ interface UseWidgetDataResult {
   lastUpdated: string | null;
 }
 
-export const useWidgetData = ({ widget, forceRefresh }: UseWidgetDataProps): UseWidgetDataResult => {
+// Helper function to apply filters to data
+const applyFilters = (data: any[], filters: WidgetFilter[]): any[] => {
+  if (!filters || filters.length === 0) {
+    return data;
+  }
+
+  return data.filter(item => {
+    return filters.every(filter => {
+      if (!filter.isActive) return true;
+      
+      const value = item[filter.field];
+      switch (filter.operator) {
+        case 'equals':
+          return value == filter.value; // Use == to allow type coercion
+        case 'contains':
+          return String(value).toLowerCase().includes(String(filter.value).toLowerCase());
+        case 'gt':
+          return Number(value) > Number(filter.value);
+        case 'lt':
+          return Number(value) < Number(filter.value);
+        case 'between':
+          const [min, max] = String(filter.value).split(',').map(Number);
+          return Number(value) >= min && Number(value) <= max;
+        default:
+          return true;
+      }
+    });
+  });
+};
+
+export const useWidgetData = ({ widget, forceRefresh, globalFilters = [] }: UseWidgetDataProps): UseWidgetDataResult => {
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
@@ -128,6 +158,23 @@ export const useWidgetData = ({ widget, forceRefresh }: UseWidgetDataProps): Use
     }
   }, [widget, getMockData, transformData]);
 
+  // Apply both widget-specific filters and global filters
+  const filteredData = useMemo(() => {
+    // First apply widget-specific filters
+    let result = data;
+    
+    if (widget.config.filters && widget.config.filters.length > 0) {
+      result = applyFilters(result, widget.config.filters);
+    }
+    
+    // Then apply global filters
+    if (globalFilters.length > 0) {
+      result = applyFilters(result, globalFilters);
+    }
+    
+    return result;
+  }, [data, widget.config.filters, globalFilters]);
+
   // Function to manually refresh data
   const refresh = useCallback(() => {
     fetchData();
@@ -161,5 +208,5 @@ export const useWidgetData = ({ widget, forceRefresh }: UseWidgetDataProps): Use
     return undefined;
   }, [widget, fetchData]);
 
-  return { data, isLoading, error, refresh, lastUpdated };
+  return { data: filteredData, isLoading, error, refresh, lastUpdated };
 };

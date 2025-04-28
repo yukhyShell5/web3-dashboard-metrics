@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,38 +28,11 @@ const Widget: React.FC<WidgetProps> = ({
   onConfigure
 }) => {
   const [showFilters, setShowFilters] = useState(false);
-  const { refreshWidget } = useDashboard();
-  const { data, isLoading, refresh, lastUpdated } = useWidgetData({ widget });
-
-  // Filter the data based on widget filters
-  const filteredData = React.useMemo(() => {
-    if (!widget.config.filters || widget.config.filters.length === 0) {
-      return data;
-    }
-
-    return data.filter(item => {
-      return widget.config.filters!.every(filter => {
-        if (!filter.isActive) return true;
-        
-        const value = item[filter.field];
-        switch (filter.operator) {
-          case 'equals':
-            return value == filter.value; // Use == to allow type coercion
-          case 'contains':
-            return String(value).toLowerCase().includes(String(filter.value).toLowerCase());
-          case 'gt':
-            return Number(value) > Number(filter.value);
-          case 'lt':
-            return Number(value) < Number(filter.value);
-          case 'between':
-            const [min, max] = String(filter.value).split(',').map(Number);
-            return Number(value) >= min && Number(value) <= max;
-          default:
-            return true;
-        }
-      });
-    });
-  }, [data, widget.config.filters]);
+  const { refreshWidget, globalFilters, addGlobalFilter } = useDashboard();
+  const { data, isLoading, refresh, lastUpdated } = useWidgetData({ 
+    widget, 
+    globalFilters
+  });
 
   const handleFilterChange = (filters: WidgetFilter[]) => {
     if (onConfigure) {
@@ -87,6 +59,37 @@ const Widget: React.FC<WidgetProps> = ({
     refreshWidget(widget.id);
   };
 
+  // Handle chart element click to add global filter
+  const handleChartElementClick = (elementData: any) => {
+    if (isEditing) return; // Don't add filters in edit mode
+    
+    // Determine the best field and value to filter on
+    const xDataKey = widget.config.xDataKey || 'name';
+    const dataKey = widget.config.dataKey || 'value';
+    
+    if (elementData[xDataKey]) {
+      // Add a filter based on the clicked element's category/name
+      addGlobalFilter({
+        field: xDataKey,
+        operator: 'equals',
+        value: elementData[xDataKey],
+        label: `${widget.title}: ${elementData[xDataKey]}`,
+        sourceWidgetId: widget.id,
+        isActive: true
+      });
+    } else if (elementData.name) {
+      // Fallback to 'name' property if it exists
+      addGlobalFilter({
+        field: 'name',
+        operator: 'equals',
+        value: elementData.name,
+        label: `${widget.title}: ${elementData.name}`,
+        sourceWidgetId: widget.id,
+        isActive: true
+      });
+    }
+  };
+
   const renderWidgetContent = () => {
     if (isLoading) {
       return (
@@ -100,37 +103,39 @@ const Widget: React.FC<WidgetProps> = ({
       case 'bar':
         return (
           <BarChart
-            data={filteredData}
+            data={data}
             xDataKey={widget.config.xDataKey || "name"}
             height={widget.position.h * 50}
             bars={[{ dataKey: widget.config.dataKey || 'value', name: 'Value', fill: widget.config.colorScheme?.[0] || '#3b82f6' }]}
             stacked={widget.config.stacked}
+            onElementClick={handleChartElementClick}
           />
         );
       case 'line':
         return (
           <LineChart
-            data={filteredData}
+            data={data}
             xDataKey={widget.config.xDataKey || "day"}
             height={widget.position.h * 50}
             lines={[{ dataKey: widget.config.dataKey || 'value', name: 'Value', stroke: widget.config.colorScheme?.[0] || '#8b5cf6' }]}
+            onPointClick={handleChartElementClick}
           />
         );
       case 'pie':
         return (
           <PieChart
-            data={filteredData}
+            data={data}
             dataKey={widget.config.dataKey || "value"}
             nameKey={widget.config.xDataKey || "name"}
             height={widget.position.h * 50}
             colors={widget.config.colorScheme || ['#3b82f6', '#8b5cf6', '#10b981', '#ef4444']}
+            onSectorClick={handleChartElementClick}
           />
         );
       case 'gauge':
-        const gaugeValue = filteredData.length > 0 ? filteredData[0].value || 0 : 0;
         return (
           <GaugeChart
-            value={gaugeValue}
+            value={data.length > 0 ? data[0].value || 0 : 0}
             min={widget.config.min || 0}
             max={widget.config.max || 100}
             colors={widget.config.colorScheme || ['#10b981', '#f59e0b', '#ef4444']}
@@ -140,29 +145,30 @@ const Widget: React.FC<WidgetProps> = ({
       case 'heatmap':
         return (
           <HeatmapChart
-            data={filteredData}
+            data={data}
             height={widget.position.h * 50}
             colorRange={widget.config.colorScheme || ['#e5f5e0', '#a1d99b', '#31a354']}
+            onCellClick={handleChartElementClick}
           />
         );
       case 'scatter':
         return (
           <ScatterPlotChart
-            data={filteredData}
+            data={data}
             xDataKey={widget.config.xDataKey || "x"}
             yDataKey={widget.config.dataKey || "y"}
             zDataKey={widget.config.zDataKey || "z"}
             nameKey={widget.config.nameKey || "name"}
             height={widget.position.h * 50}
             fill={widget.config.colorScheme?.[0] || '#8884d8'}
+            onPointClick={handleChartElementClick}
           />
         );
       case 'stat':
-        const value = widget.config.value && data.length > 0 ? data[0][widget.config.value] || '0' : '0';
         return (
           <StatCard
             title={widget.title}
-            value={value}
+            value={widget.config.value && data.length > 0 ? data[0][widget.config.value] || '0' : '0'}
             icon={widget.config.icon ? <GaugeIcon className="h-4 w-4" /> : null}
             change={widget.config.trend ? {
               value: parseFloat(widget.config.trend?.replace('%', '')),

@@ -7,6 +7,7 @@ import { Responsive, WidthProvider } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
 import Widget from './Widget';
+import GlobalFilters from './GlobalFilters';
 import { useDashboardStore } from '@/services/dashboardStore';
 import { DashboardLayout } from '@/types/dashboard';
 import { DashboardProvider } from '@/contexts/DashboardContext';
@@ -17,6 +18,7 @@ const DashboardView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const getDashboardById = useDashboardStore(state => state.getDashboardById);
+  const setDashboardGlobalFilters = useDashboardStore(state => state.setDashboardGlobalFilters);
   
   const dashboard = getDashboardById(id || '') as DashboardLayout;
   const [autoRefreshing, setAutoRefreshing] = useState<boolean>(dashboard?.autoRefresh || false);
@@ -59,9 +61,20 @@ const DashboardView: React.FC = () => {
   const toggleAutoRefresh = () => {
     setAutoRefreshing(prev => !prev);
   };
+
+  const handleFiltersChange = (filters: any) => {
+    if (id) {
+      setDashboardGlobalFilters(id, filters);
+    }
+  };
   
   return (
-    <DashboardProvider initialVariables={dashboard.variables}>
+    <DashboardProvider 
+      initialVariables={dashboard.variables}
+      initialFilters={dashboard.globalFilters || []}
+      dashboardId={dashboard.id}
+      onFiltersChange={handleFiltersChange}
+    >
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-4">
@@ -109,6 +122,8 @@ const DashboardView: React.FC = () => {
         </div>
         
         <div className="bg-card rounded-lg border shadow-sm p-4">
+          <GlobalFilters />
+          
           <ResponsiveGridLayout
             className="layout"
             layouts={layouts}

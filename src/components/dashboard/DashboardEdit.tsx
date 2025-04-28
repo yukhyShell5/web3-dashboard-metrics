@@ -135,7 +135,10 @@ const DashboardEdit: React.FC = () => {
   };
   
   return (
-    <DashboardProvider initialVariables={dashboard.variables}>
+    <DashboardProvider 
+      initialVariables={dashboard.variables}
+      initialFilters={dashboard.globalFilters || []}
+    >
       <DndProvider backend={HTML5Backend}>
         <div className="space-y-6">
           <div className="flex justify-between items-center">

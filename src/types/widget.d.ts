@@ -1,4 +1,3 @@
-
 import { ReactNode } from 'react';
 
 export type WidgetType = 
@@ -39,6 +38,8 @@ export interface WidgetFilter {
   operator: 'equals' | 'contains' | 'gt' | 'lt' | 'between';
   value: any;
   isActive: boolean;
+  label?: string;
+  sourceWidgetId?: string;
 }
 
 export interface Widget {
