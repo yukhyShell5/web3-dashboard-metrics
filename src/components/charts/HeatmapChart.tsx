@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   ResponsiveContainer, 
@@ -19,12 +18,14 @@ interface HeatmapChartProps {
   }>;
   height?: number;
   colorRange?: string[];
+  onCellClick?: (data: any) => void;
 }
 
 const HeatmapChart: React.FC<HeatmapChartProps> = ({
   data,
   height = 300,
-  colorRange = ['#e5f5e0', '#a1d99b', '#31a354']
+  colorRange = ['#e5f5e0', '#a1d99b', '#31a354'],
+  onCellClick
 }) => {
   // Find the min and max values for color scaling
   const minValue = Math.min(...data.map(item => item.value));
@@ -48,6 +49,12 @@ const HeatmapChart: React.FC<HeatmapChartProps> = ({
   
   const uniqueDays = [...new Set(data.map(item => item.day))];
   const uniqueHours = [...new Set(data.map(item => item.hour))].sort((a, b) => a - b);
+
+  const handleClick = (entry: any) => {
+    if (onCellClick) {
+      onCellClick(entry);
+    }
+  };
   
   return (
     <ResponsiveContainer width="100%" height={height}>
@@ -92,9 +99,17 @@ const HeatmapChart: React.FC<HeatmapChartProps> = ({
             color: 'hsl(var(--foreground))'
           }}
         />
-        <Scatter data={data} shape="square">
+        <Scatter 
+          data={data} 
+          shape="square"
+          onClick={handleClick}
+        >
           {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={getColor(entry.value)} />
+            <Cell 
+              key={`cell-${index}`} 
+              fill={getColor(entry.value)} 
+              style={{ cursor: onCellClick ? 'pointer' : 'default' }}
+            />
           ))}
         </Scatter>
       </ScatterChart>

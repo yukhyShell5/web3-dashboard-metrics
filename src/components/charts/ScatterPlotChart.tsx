@@ -20,6 +20,7 @@ interface ScatterPlotChartProps {
   nameKey?: string;
   height?: number;
   fill?: string;
+  onPointClick?: (data: any) => void;
 }
 
 const ScatterPlotChart: React.FC<ScatterPlotChartProps> = ({
@@ -29,8 +30,15 @@ const ScatterPlotChart: React.FC<ScatterPlotChartProps> = ({
   zDataKey,
   nameKey,
   height = 300,
-  fill = '#8884d8'
+  fill = '#8884d8',
+  onPointClick
 }) => {
+  const handleClick = (data: any) => {
+    if (onPointClick && data) {
+      onPointClick(data);
+    }
+  };
+
   return (
     <ResponsiveContainer width="100%" height={height}>
       <RechartsScatterChart
@@ -80,6 +88,8 @@ const ScatterPlotChart: React.FC<ScatterPlotChartProps> = ({
           data={data} 
           fill={fill} 
           shape="circle"
+          onClick={handleClick}
+          cursor={onPointClick ? 'pointer' : 'default'}
         />
       </RechartsScatterChart>
     </ResponsiveContainer>
