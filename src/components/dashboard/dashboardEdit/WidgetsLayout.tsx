@@ -3,7 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { PlusIcon } from 'lucide-react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
-import Widget from '../Widget';
+import Widget from '../widget';
 import { Widget as WidgetType } from '@/types/widget';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);

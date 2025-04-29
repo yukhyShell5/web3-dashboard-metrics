@@ -6,7 +6,7 @@ import { ArrowLeftIcon, EditIcon, RefreshCwIcon } from 'lucide-react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import Widget from './Widget';
+import Widget from './widget';
 import GlobalFilters from './GlobalFilters';
 import { useDashboardStore } from '@/services/dashboardStore';
 import { DashboardLayout } from '@/types/dashboard';
