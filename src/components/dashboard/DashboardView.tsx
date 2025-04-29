@@ -14,13 +14,19 @@ import { DashboardProvider } from '@/contexts/DashboardContext';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-const DashboardView: React.FC = () => {
+interface DashboardViewProps {
+  dashboardId?: string;
+  isHomePage?: boolean;
+}
+
+const DashboardView: React.FC<DashboardViewProps> = ({ dashboardId, isHomePage = false }) => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const getDashboardById = useDashboardStore(state => state.getDashboardById);
   const setDashboardGlobalFilters = useDashboardStore(state => state.setDashboardGlobalFilters);
   
-  const dashboard = getDashboardById(id || '') as DashboardLayout;
+  const effectiveId = dashboardId || id || '';
+  const dashboard = getDashboardById(effectiveId) as DashboardLayout;
   const [autoRefreshing, setAutoRefreshing] = useState<boolean>(dashboard?.autoRefresh || false);
   const [refreshTrigger, setRefreshTrigger] = useState<number>(Date.now());
   
@@ -63,8 +69,8 @@ const DashboardView: React.FC = () => {
   };
 
   const handleFiltersChange = (filters: any) => {
-    if (id) {
-      setDashboardGlobalFilters(id, filters);
+    if (effectiveId) {
+      setDashboardGlobalFilters(effectiveId, filters);
     }
   };
   
@@ -78,13 +84,15 @@ const DashboardView: React.FC = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-4">
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={() => navigate('/dashboards')}
-            >
-              <ArrowLeftIcon className="h-4 w-4" />
-            </Button>
+            {!isHomePage && (
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => navigate('/dashboards')}
+              >
+                <ArrowLeftIcon className="h-4 w-4" />
+              </Button>
+            )}
             <div>
               <h1 className="text-2xl font-bold">{dashboard.title}</h1>
               <p className="text-muted-foreground">{dashboard.description}</p>
