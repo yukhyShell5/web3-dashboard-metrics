@@ -16,6 +16,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { 
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { 
   MoreVerticalIcon, 
   CheckIcon, 
   XIcon, 
@@ -27,6 +34,7 @@ import {
   ArrowDownIcon
 } from 'lucide-react';
 import { toast } from '@/components/ui/use-toast';
+import RuleEditForm from './RuleEditForm';
 
 type Rule = {
   id: string;
@@ -52,6 +60,8 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const [triggerCounts, setTriggerCounts] = useState<Record<string, {count: number, lastTriggered?: string}>>({});
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [currentRule, setCurrentRule] = useState<Rule | null>(null);
 
   // Fetch trigger counts on component mount
   useEffect(() => {
@@ -238,109 +248,164 @@ const RuleList: React.FC<RuleListProps> = ({ rules, onToggleRule }) => {
     });
   };
 
+  const handleEditRule = (rule: Rule) => {
+    setCurrentRule(rule);
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    
+    if (!currentRule) return;
+    
+    const formData = new FormData(e.currentTarget);
+    const updatedRule = {
+      name: formData.get('name') as string,
+      description: formData.get('description') as string,
+      severity: formData.get('severity') as 'critical' | 'high' | 'medium' | 'low',
+      category: formData.get('category') as string,
+      status: formData.get('status') as 'active' | 'paused' | 'disabled'
+    };
+    
+    try {
+      // TODO: Implement API call to update rule
+      // For now, just show a success message
+      toast({
+        title: "Règle modifiée",
+        description: `La règle "${updatedRule.name}" a été modifiée avec succès.`,
+        variant: "default",
+      });
+      
+      setEditDialogOpen(false);
+    } catch (error) {
+      console.error("Error updating rule:", error);
+      toast({
+        title: "Erreur",
+        description: `Échec de la modification de la règle "${currentRule.name}".`,
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead className="cursor-pointer text-left" onClick={() => handleSort('name')}>
-            <div className="flex items-center justify-start">
-              Name
-              {getSortIcon('name') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
-            </div>
-          </TableHead>
-          <TableHead className="cursor-pointer text-left" onClick={() => handleSort('category')}>
-            <div className="flex items-center justify-start">
-              Category
-              {getSortIcon('category') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
-            </div>
-          </TableHead>
-          <TableHead className="cursor-pointer text-center" onClick={() => handleSort('severity')}>
-            <div className="flex items-center justify-center">
-              Severity
-              {getSortIcon('severity') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
-            </div>
-          </TableHead>
-          <TableHead className="cursor-pointer text-center" onClick={() => handleSort('status')}>
-            <div className="flex items-center justify-center">
-              Status
-              {getSortIcon('status') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
-            </div>
-          </TableHead>
-          <TableHead className="cursor-pointer text-center" onClick={() => handleSort('triggers')}>
-            <div className="flex items-center justify-center">
-              Triggers
-              {getSortIcon('triggers') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
-            </div>
-          </TableHead>
-          <TableHead className="text-center">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {sortedRules.length > 0 ? (
-          sortedRules.map((rule) => (
-            <TableRow key={rule.id}>
-              <TableCell className="text-left">
-                <div className="flex flex-col items-start">
-                  <div className="font-medium">{rule.name}</div>
-                  <div className="text-xs text-muted-foreground">{rule.description}</div>
-                </div>
-              </TableCell>
-              <TableCell className="text-center">
-                <div className="flex items-center justify-start gap-2">
-                  {getCategoryIcon(rule.category)}
-                  <span className="capitalize">{rule.category.replace('-', ' ')}</span>
-                </div>
-              </TableCell>
-              <TableCell className="text-center">
-                <div className="flex justify-center">
-                  {getSeverityBadge(rule.severity)}
-                </div>
-              </TableCell>
-              <TableCell className="text-center">
-                <div className="flex justify-center">
-                  {getStatusBadge(rule.status)}
-                </div>
-              </TableCell>
-              <TableCell className="text-center">
-                <div className="flex flex-col items-center">
-                  <Badge variant={rule.triggers > 0 ? "default" : "secondary"} className="mx-auto">
-                    {rule.triggers} triggers
-                  </Badge>
-                  {rule.triggers > 0 && (
-                    <span className="text-xs text-muted-foreground mt-1">
-                      Last: {formatDate(rule.lastTriggered)}
-                    </span>
-                  )}
-                </div>
-              </TableCell>
-              <TableCell className="text-center">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="mx-auto">
-                      <MoreVerticalIcon className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>Edit</DropdownMenuItem>
-                    <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleToggleRule(rule)}>
-                      {rule.status === 'active' ? 'Désactiver' : 'Activer'}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+    <>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead className="cursor-pointer text-left" onClick={() => handleSort('name')}>
+              <div className="flex items-center justify-start">
+                Name
+                {getSortIcon('name') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
+              </div>
+            </TableHead>
+            <TableHead className="cursor-pointer text-left" onClick={() => handleSort('category')}>
+              <div className="flex items-center justify-start">
+                Category
+                {getSortIcon('category') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
+              </div>
+            </TableHead>
+            <TableHead className="cursor-pointer text-center" onClick={() => handleSort('severity')}>
+              <div className="flex items-center justify-center">
+                Severity
+                {getSortIcon('severity') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
+              </div>
+            </TableHead>
+            <TableHead className="cursor-pointer text-center" onClick={() => handleSort('status')}>
+              <div className="flex items-center justify-center">
+                Status
+                {getSortIcon('status') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
+              </div>
+            </TableHead>
+            <TableHead className="cursor-pointer text-center" onClick={() => handleSort('triggers')}>
+              <div className="flex items-center justify-center">
+                Triggers
+                {getSortIcon('triggers') || <div className="ml-1 h-4 w-4 opacity-0">•</div>}
+              </div>
+            </TableHead>
+            <TableHead className="text-center">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {sortedRules.length > 0 ? (
+            sortedRules.map((rule) => (
+              <TableRow key={rule.id}>
+                <TableCell className="text-left">
+                  <div className="flex flex-col items-start">
+                    <div className="font-medium">{rule.name}</div>
+                    <div className="text-xs text-muted-foreground">{rule.description}</div>
+                  </div>
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="flex items-center justify-start gap-2">
+                    {getCategoryIcon(rule.category)}
+                    <span className="capitalize">{rule.category.replace('-', ' ')}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="flex justify-center">
+                    {getSeverityBadge(rule.severity)}
+                  </div>
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="flex justify-center">
+                    {getStatusBadge(rule.status)}
+                  </div>
+                </TableCell>
+                <TableCell className="text-center">
+                  <div className="flex flex-col items-center">
+                    <Badge variant={rule.triggers > 0 ? "default" : "secondary"} className="mx-auto">
+                      {rule.triggers} triggers
+                    </Badge>
+                    {rule.triggers > 0 && (
+                      <span className="text-xs text-muted-foreground mt-1">
+                        Last: {formatDate(rule.lastTriggered)}
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell className="text-center">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="mx-auto">
+                        <MoreVerticalIcon className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEditRule(rule)}>Edit</DropdownMenuItem>
+                      <DropdownMenuItem>Duplicate</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleToggleRule(rule)}>
+                        {rule.status === 'active' ? 'Désactiver' : 'Activer'}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
+                No rules found matching the filters.
               </TableCell>
             </TableRow>
-          ))
-        ) : (
-          <TableRow>
-            <TableCell colSpan={6} className="text-center py-6 text-muted-foreground">
-              No rules found matching the filters.
-            </TableCell>
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
+          )}
+        </TableBody>
+      </Table>
+      
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Edit Rule</DialogTitle>
+            <DialogDescription>
+              Modify the rule settings and click save when you're done.
+            </DialogDescription>
+          </DialogHeader>
+          {currentRule && (
+            <RuleEditForm rule={currentRule} onSubmit={handleEditSubmit} />
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 
