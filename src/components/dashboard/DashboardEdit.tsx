@@ -1,26 +1,22 @@
 
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { ArrowLeftIcon, PlusIcon, SaveIcon } from 'lucide-react';
-import { Responsive, WidthProvider } from 'react-grid-layout';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
-import Widget from './Widget';
 import WidgetCreator from './WidgetCreator';
 import { useDashboardStore } from '@/services/dashboardStore';
 import { DashboardLayout } from '@/types/dashboard';
-import { Widget as WidgetType, WidgetType as WidgetTypeEnum } from '@/types/widget';
+import { WidgetType as WidgetTypeEnum } from '@/types/widget';
 import { toast } from "@/hooks/use-toast";
 import { DashboardProvider } from '@/contexts/DashboardContext';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import GlobalFilters from './GlobalFilters';
-
-const ResponsiveGridLayout = WidthProvider(Responsive);
+import DashboardHeader from './dashboardEdit/DashboardHeader';
+import WidgetsLayout from './dashboardEdit/WidgetsLayout';
+import EmptyDashboard from './dashboardEdit/EmptyDashboard';
 
 const DashboardEdit: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -39,23 +35,8 @@ const DashboardEdit: React.FC = () => {
   const [isWidgetCreatorOpen, setIsWidgetCreatorOpen] = useState(false);
   
   if (!dashboard) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)]">
-        <p className="text-xl font-semibold mb-4">Dashboard not found</p>
-        <Button onClick={() => navigate('/dashboards')}>
-          Back to Dashboards
-        </Button>
-      </div>
-    );
+    return <EmptyDashboard onGoBack={() => navigate('/dashboards')} />;
   }
-  
-  // Map widgets to layout format required by GridLayout
-  const layouts = {
-    lg: dashboard.widgets.map(widget => ({
-      ...widget.position,
-      i: widget.id
-    }))
-  };
   
   const handleLayoutChange = (layout: any) => {
     updateWidgetPositions(dashboard.id, layout);
@@ -103,7 +84,7 @@ const DashboardEdit: React.FC = () => {
         break;
     }
     
-    const newWidget: Omit<WidgetType, 'id'> = {
+    const newWidget = {
       type: widgetConfig.type,
       title: widgetConfig.title,
       position: {
@@ -126,10 +107,6 @@ const DashboardEdit: React.FC = () => {
     });
   };
   
-  const handleRemoveWidget = (widgetId: string) => {
-    removeWidget(dashboard.id, widgetId);
-  };
-  
   return (
     <DashboardProvider 
       initialVariables={dashboard.variables}
@@ -137,99 +114,26 @@ const DashboardEdit: React.FC = () => {
     >
       <DndProvider backend={HTML5Backend}>
         <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => navigate('/dashboards')}
-              >
-                <ArrowLeftIcon className="h-4 w-4" />
-              </Button>
-              <div>
-                <Input
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="text-2xl font-bold bg-transparent border-none focus-visible:ring-0 p-0 h-auto"
-                  placeholder="Dashboard Title"
-                />
-                <Input
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="text-sm text-muted-foreground bg-transparent border-none focus-visible:ring-0 p-0 h-auto"
-                  placeholder="Add a description"
-                />
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button 
-                variant="outline"
-                onClick={() => navigate(`/dashboards/view/${dashboard.id}`)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleSave}
-                className="flex items-center gap-2"
-              >
-                <SaveIcon className="h-4 w-4" />
-                Save Changes
-              </Button>
-            </div>
-          </div>
+          <DashboardHeader
+            title={title}
+            setTitle={setTitle}
+            description={description}
+            setDescription={setDescription}
+            dashboardId={dashboard.id}
+            onSave={handleSave}
+          />
           
           {/* Global filters section */}
           <Card className="p-4">
             <GlobalFilters />
           </Card>
           
-          <div className="bg-card rounded-lg border shadow-sm p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">Layout Editor</h2>
-              <Button
-                onClick={() => setIsWidgetCreatorOpen(true)}
-                className="flex items-center gap-2"
-              >
-                <PlusIcon className="h-4 w-4" />
-                Add Widget
-              </Button>
-            </div>
-            
-            <ResponsiveGridLayout
-              className="layout"
-              layouts={layouts}
-              breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-              cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
-              rowHeight={100}
-              onLayoutChange={handleLayoutChange}
-              isDraggable={true}
-              isResizable={true}
-              margin={[16, 16]}
-            >
-              {dashboard.widgets.map(widget => (
-                <div key={widget.id} data-grid={widget.position}>
-                  <Widget 
-                    widget={widget} 
-                    isEditing={true} 
-                    onRemove={handleRemoveWidget} 
-                  />
-                </div>
-              ))}
-            </ResponsiveGridLayout>
-            
-            {dashboard.widgets.length === 0 && (
-              <div className="flex flex-col items-center justify-center h-64 border border-dashed rounded-lg">
-                <p className="text-muted-foreground mb-4">No widgets added yet</p>
-                <Button
-                  onClick={() => setIsWidgetCreatorOpen(true)}
-                  className="flex items-center gap-2"
-                >
-                  <PlusIcon className="h-4 w-4" />
-                  Add Widget
-                </Button>
-              </div>
-            )}
-          </div>
+          <WidgetsLayout 
+            widgets={dashboard.widgets}
+            onLayoutChange={handleLayoutChange}
+            onRemoveWidget={(widgetId) => removeWidget(dashboard.id, widgetId)}
+            onAddWidgetClick={() => setIsWidgetCreatorOpen(true)}
+          />
         </div>
         
         <Dialog open={isWidgetCreatorOpen} onOpenChange={setIsWidgetCreatorOpen}>
