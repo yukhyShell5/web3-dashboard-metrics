@@ -19,6 +19,7 @@ export const Default: Story = {
       severity: 'high',
       category: 'transaction',
       status: 'active',
+      code: 'function checkTransaction(tx) {\n  return tx.value > 100000000000000000000; // 100 ETH\n}',
     },
     onSubmit: (e) => {
       e.preventDefault();

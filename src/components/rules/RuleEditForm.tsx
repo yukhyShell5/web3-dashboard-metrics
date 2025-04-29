@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { 
   Select, 
   SelectContent, 
@@ -23,6 +24,7 @@ interface RuleEditFormProps {
     severity: 'critical' | 'high' | 'medium' | 'low';
     category: string;
     status: 'active' | 'paused' | 'disabled';
+    code?: string;
   };
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
 }
@@ -103,6 +105,19 @@ const RuleEditForm: React.FC<RuleEditFormProps> = ({ rule, onSubmit }) => {
             <SelectItem value="disabled">Disabled</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+      
+      <div className="grid grid-cols-4 gap-4">
+        <Label htmlFor="code" className="text-right self-start pt-2">
+          Rule Code
+        </Label>
+        <Textarea 
+          id="code" 
+          name="code" 
+          defaultValue={rule.code || ''} 
+          className="col-span-3 min-h-[150px] font-mono" 
+          placeholder="Enter rule code here..."
+        />
       </div>
       
       <DialogFooter>
