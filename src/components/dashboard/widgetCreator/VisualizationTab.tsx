@@ -11,7 +11,7 @@ interface VisualizationTabProps {
   widgetTypes: Array<{
     type: WidgetType;
     title: string;
-    icon: React.ReactNode;
+    icon: React.ComponentType<{ className?: string }>;
   }>;
   visualizationType: string;
   setVisualizationType: (type: string) => void;
@@ -42,22 +42,25 @@ const VisualizationTab: React.FC<VisualizationTabProps> = ({
       <div className="space-y-2">
         <Label>Widget Type</Label>
         <div className="grid grid-cols-4 gap-2">
-          {widgetTypes.map((widgetType) => (
-            <Card 
-              key={widgetType.type}
-              className={`cursor-pointer transition-all hover:border-primary ${
-                type === widgetType.type ? 'border-2 border-primary' : ''
-              }`}
-              onClick={() => setType(widgetType.type)}
-            >
-              <CardContent className="flex flex-col items-center justify-center p-4 text-center">
-                <div className="h-10 w-10 flex items-center justify-center mb-2">
-                  {widgetType.icon}
-                </div>
-                <span className="text-sm">{widgetType.title}</span>
-              </CardContent>
-            </Card>
-          ))}
+          {widgetTypes.map((widgetType) => {
+            const Icon = widgetType.icon;
+            return (
+              <Card 
+                key={widgetType.type}
+                className={`cursor-pointer transition-all hover:border-primary ${
+                  type === widgetType.type ? 'border-2 border-primary' : ''
+                }`}
+                onClick={() => setType(widgetType.type)}
+              >
+                <CardContent className="flex flex-col items-center justify-center p-4 text-center">
+                  <div className="h-10 w-10 flex items-center justify-center mb-2">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <span className="text-sm">{widgetType.title}</span>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       </div>
 
