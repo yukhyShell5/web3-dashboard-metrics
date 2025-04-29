@@ -1,5 +1,6 @@
+
 import type { Meta, StoryObj } from '@storybook/react';
-import Widget from './Widget';
+import Widget from './widget';
 
 const meta: Meta<typeof Widget> = {
   title: 'Components/Dashboard/Widget',
@@ -11,6 +12,6 @@ type Story = StoryObj<typeof Widget>;
 
 export const Default: Story = {
   args: {
-    // Ajoutez vos props ici
+    // Add your props here
   },
 };
