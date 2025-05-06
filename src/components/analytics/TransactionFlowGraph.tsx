@@ -8,7 +8,8 @@ import {
   Node,
   Edge,
   ConnectionLineType,
-  MarkerType
+  MarkerType,
+  BackgroundVariant
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { AlertItemProps } from './RecentAlerts';
@@ -171,7 +172,7 @@ const TransactionFlowGraph = ({ alert }: TransactionFlowGraphProps) => {
         defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
         connectionLineType={ConnectionLineType.SmoothStep}
       >
-        <Background color="#222" gap={16} variant='dots' />
+        <Background color="#222" gap={16} variant={BackgroundVariant.Dots} />
         <Controls position="bottom-right" style={{ background: '#1a1f2c', border: 'none' }} />
         <MiniMap 
           nodeColor={(node) => {
