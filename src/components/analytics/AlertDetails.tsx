@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { AlertItemProps } from './RecentAlerts';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardDescription } from "@/components/ui/card";
+import TransactionFlowGraph from './TransactionFlowGraph';
 
 interface AlertDetailsProps {
   alert: AlertItemProps | null;
@@ -97,20 +98,11 @@ export function AlertDetails({ alert, isOpen, onClose }: AlertDetailsProps) {
 
             <TabsContent value="flow" className="space-y-4">
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="pt-6 pb-6">
                   <div className="space-y-4">
                     <div>
-                      <h4 className="font-medium mb-2">Flux des Transactions</h4>
-                      <div className="space-y-2">
-                        <div className="text-sm">
-                          <p className="mb-2">Chemin des fonds:</p>
-                          <div className="pl-4 border-l-2 border-muted space-y-2">
-                            <p>1. Wallet A → Contract B</p>
-                            <p>2. Contract B → DEX</p>
-                            <p>3. DEX → Unknown Wallet</p>
-                          </div>
-                        </div>
-                      </div>
+                      <h4 className="font-medium mb-4">Flux des Transactions</h4>
+                      {alert && <TransactionFlowGraph alert={alert} />}
                     </div>
                   </div>
                 </CardContent>
