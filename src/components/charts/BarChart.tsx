@@ -10,7 +10,7 @@ interface BarChartProps {
     fill: string;
     name?: string;
   }[];
-  height?: number;
+  height?: number | string;
   stacked?: boolean;
   onElementClick?: (data: any) => void;
 }
@@ -41,11 +41,11 @@ const BarChart: React.FC<BarChartProps> = ({
         }}
         onClick={(e) => e?.activePayload && handleClick(e.activePayload[0]?.payload)}
       >
-        <CartesianGrid strokeDasharray="3 3" opacity={0.1} vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" opacity={0.05} vertical={false} />
         <XAxis 
           dataKey={xDataKey} 
           tick={{ fontSize: 10 }}
-          axisLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+          axisLine={{ stroke: 'rgba(255, 255, 255, 0.05)' }}
           tickLine={false}
         />
         <YAxis 
@@ -53,6 +53,7 @@ const BarChart: React.FC<BarChartProps> = ({
           axisLine={false}
           tickLine={false}
           tickCount={5}
+          width={20}
         />
         <Tooltip 
           contentStyle={{ 

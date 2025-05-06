@@ -15,7 +15,7 @@ interface LineChartProps {
   lines: LineConfig[];
   onLineClick?: (dataKey: string) => void;
   onPointClick?: (alertId: string) => void;
-  height?: number;
+  height?: number | string;
 }
 
 const LineChart = ({ data, xDataKey, lines, onLineClick, onPointClick, height = 400 }: LineChartProps) => {
@@ -48,13 +48,13 @@ const LineChart = ({ data, xDataKey, lines, onLineClick, onPointClick, height = 
           bottom: 5,
         }}
       >
-        <CartesianGrid strokeDasharray="3 3" opacity={0.1} vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" opacity={0.05} vertical={false} />
         <XAxis 
           dataKey={xDataKey} 
           interval="preserveStartEnd"
           minTickGap={30}
           tick={{ fontSize: 10 }}
-          axisLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+          axisLine={{ stroke: 'rgba(255, 255, 255, 0.05)' }}
           tickLine={false}
         />
         <YAxis 
@@ -63,6 +63,7 @@ const LineChart = ({ data, xDataKey, lines, onLineClick, onPointClick, height = 
           axisLine={false}
           tickLine={false}
           tickCount={5}
+          width={20}
         />
         <Tooltip 
           contentStyle={{ 

@@ -17,7 +17,7 @@ interface HeatmapChartProps {
     hour: number;
     value: number;
   }>;
-  height?: number;
+  height?: number | string;
   colorRange?: string[];
   onCellClick?: (data: any) => void;
 }
@@ -72,17 +72,18 @@ const HeatmapChart: React.FC<HeatmapChartProps> = ({
           dataKey="hour" 
           name="Hour" 
           tick={{ fontSize: 10 }}
-          axisLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+          axisLine={{ stroke: 'rgba(255, 255, 255, 0.05)' }}
           tickLine={false}
           domain={[0, 23]} 
           ticks={[0, 6, 12, 18, 23]}
           tickFormatter={(hour) => `${hour}h`}
+          height={10}
         />
         <YAxis 
           type="category" 
           dataKey="day" 
           name="Day" 
-          width={40}
+          width={25}
           tick={{ fontSize: 10 }}
           axisLine={false}
           tickLine={false}

@@ -18,7 +18,7 @@ interface ScatterPlotChartProps {
   yDataKey: string;
   zDataKey?: string;
   nameKey?: string;
-  height?: number;
+  height?: number | string;
   fill?: string;
   onPointClick?: (data: any) => void;
 }
@@ -46,17 +46,18 @@ const ScatterPlotChart: React.FC<ScatterPlotChartProps> = ({
           top: 5,
           right: 5,
           bottom: 5,
-          left: 5,
+          left: 0,
         }}
       >
-        <CartesianGrid strokeDasharray="3 3" opacity={0.1} vertical={false} />
+        <CartesianGrid strokeDasharray="3 3" opacity={0.05} vertical={false} />
         <XAxis 
           type="number" 
           dataKey={xDataKey} 
           name={xDataKey} 
           tick={{ fontSize: 10 }}
-          axisLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+          axisLine={{ stroke: 'rgba(255, 255, 255, 0.05)' }}
           tickLine={false}
+          width={30}
         />
         <YAxis 
           type="number" 
@@ -66,6 +67,7 @@ const ScatterPlotChart: React.FC<ScatterPlotChartProps> = ({
           axisLine={false}
           tickLine={false}
           tickCount={5}
+          width={20}
         />
         {zDataKey && (
           <ZAxis 
@@ -76,7 +78,7 @@ const ScatterPlotChart: React.FC<ScatterPlotChartProps> = ({
           />
         )}
         <Tooltip 
-          cursor={{strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.1)'}}
+          cursor={{strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.05)'}}
           contentStyle={{ 
             backgroundColor: 'hsl(var(--popover))', 
             borderColor: 'hsl(var(--border))',

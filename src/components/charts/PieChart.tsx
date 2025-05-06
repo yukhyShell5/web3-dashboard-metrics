@@ -5,7 +5,7 @@ import { ResponsiveContainer, PieChart as RechartsPieChart, Pie, Cell, Legend, T
 interface PieChartProps {
   data: any[];
   colors: string[];
-  height?: number;
+  height?: number | string;
   activeSeverity?: string | null;
   onSeverityClick?: (severity: string) => void;
   dataKey?: string;
@@ -57,7 +57,7 @@ const PieChart = ({
 
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <RechartsPieChart margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+      <RechartsPieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
         <Pie
           data={data}
           cx="50%"
@@ -99,7 +99,7 @@ const PieChart = ({
           align="center"
           iconSize={8}
           iconType="circle"
-          wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
+          wrapperStyle={{ fontSize: '10px', paddingTop: '5px' }}
           onClick={(e) => {
             if (onSeverityClick) {
               onSeverityClick(e.value.toLowerCase())

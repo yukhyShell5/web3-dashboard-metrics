@@ -43,8 +43,8 @@ const Widget: React.FC<WidgetProps> = ({
   }, [data]);
 
   return (
-    <Card className="w-full h-full overflow-hidden bg-card/50 border border-border/50 shadow-sm">
-      <CardContent className="p-3">
+    <Card className="w-full h-full overflow-hidden bg-card/50 border-border/50 shadow-none">
+      <CardContent className="p-2 flex flex-col h-full">
         <WidgetHeader
           title={widget.title}
           lastUpdated={lastUpdated}
@@ -66,7 +66,7 @@ const Widget: React.FC<WidgetProps> = ({
           />
         )}
         
-        <div className="mt-2 h-full">
+        <div className="flex-grow mt-1 h-[calc(100%-40px)]">
           <WidgetContent
             widget={widget}
             data={data}
