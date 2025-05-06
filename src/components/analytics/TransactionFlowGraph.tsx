@@ -14,9 +14,6 @@ import {
 import '@xyflow/react/dist/style.css';
 import { AlertItemProps } from './RecentAlerts';
 
-// Custom node types will be implemented if needed
-// const nodeTypes = {};
-
 interface TransactionData {
   id: string;
   source?: string;
@@ -59,30 +56,31 @@ const TransactionFlowGraph = ({ alert }: TransactionFlowGraphProps) => {
   // Generate nodes for ReactFlow
   const nodes: Node[] = useMemo(() => {
     return transactionData.transactions.map((tx, index) => {
-      let nodeType = 'default';
       let style: React.CSSProperties = {
-        background: '#1a1f2c',
-        color: '#fff',
-        border: '1px solid #333',
-        borderRadius: tx.id === 'weth' ? '50%' : '4px',
-        width: tx.id === 'weth' ? 100 : 'auto',
-        height: tx.id === 'weth' ? 50 : 'auto',
-        padding: 10,
+        background: 'var(--card)',
+        color: 'var(--card-foreground)',
+        border: '1px solid var(--border)',
+        borderRadius: '4px',
+        padding: '8px',
+        fontSize: '12px',
+        width: 'auto',
+        minWidth: '100px',
       };
       
-      // Style nodes based on type
+      // Simple styling for different node types
       if (tx.id === 'weth') {
-        style.background = '#22c55e';
+        style.background = '#22c55e20';
+        style.borderColor = '#22c55e';
+        style.borderRadius = '50%';
       } else if (tx.id === 'builder' || tx.type === 'titan') {
-        style.borderRadius = '0';
-        style.border = '1px solid #f97316';
-        style.transform = 'skew(-20deg)';
+        style.background = '#f9731620';
+        style.borderColor = '#f97316';
       } else if (tx.id === 'uniswap' || tx.id === 'uni_v2') {
-        style.borderRadius = '40px';
-        style.width = 180;
+        style.background = '#3b82f620';
+        style.borderColor = '#3b82f6';
       }
 
-      // Position nodes in a layout similar to the image
+      // Position nodes in a simple layout
       let position = { x: 0, y: 0 };
       switch (tx.id) {
         case 'wallet_central':
@@ -106,12 +104,9 @@ const TransactionFlowGraph = ({ alert }: TransactionFlowGraphProps) => {
 
       return {
         id: tx.id,
-        data: { 
-          label: tx.label,
-        },
+        data: { label: tx.label },
         position,
         style,
-        type: nodeType,
       };
     });
   }, [transactionData]);
@@ -119,18 +114,15 @@ const TransactionFlowGraph = ({ alert }: TransactionFlowGraphProps) => {
   // Generate edges for ReactFlow
   const edges: Edge[] = useMemo(() => {
     return transactionData.flows.map(flow => {
-      let style: React.CSSProperties = {};
+      let style: React.CSSProperties = { stroke: 'var(--muted-foreground)' };
       let animated = false;
       let labelStyle: React.CSSProperties = { 
-        fill: '#fff', 
+        fill: 'var(--foreground)', 
         fontSize: '10px',
         fontWeight: 'bold',
-        backgroundColor: '#1a1f2c',
-        padding: '2px 5px',
-        borderRadius: '2px',
       };
       
-      // Style edges based on type
+      // Simple edge styling based on type
       if (flow.type === 'burn') {
         style = { stroke: '#22c55e', strokeDasharray: '5,5' };
       } else if (flow.amount?.includes('ETH')) {
@@ -145,15 +137,15 @@ const TransactionFlowGraph = ({ alert }: TransactionFlowGraphProps) => {
         id: flow.id,
         source: flow.source || '',
         target: flow.target || '',
-        label: `${flow.index} ${flow.amount}`,
+        label: flow.amount,
         labelStyle,
         style,
         animated,
-        type: 'smoothstep',
+        type: 'default',
         markerEnd: {
           type: MarkerType.ArrowClosed,
-          width: 20,
-          height: 20,
+          width: 15,
+          height: 15,
           color: style.stroke as string,
         },
       };
@@ -161,7 +153,7 @@ const TransactionFlowGraph = ({ alert }: TransactionFlowGraphProps) => {
   }, [transactionData]);
 
   return (
-    <div style={{ height: 400, background: '#0a0a0a' }} className="border rounded-md overflow-hidden">
+    <div style={{ height: 400 }} className="border rounded-md overflow-hidden bg-card">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -169,19 +161,18 @@ const TransactionFlowGraph = ({ alert }: TransactionFlowGraphProps) => {
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.5}
         maxZoom={1.5}
-        defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-        connectionLineType={ConnectionLineType.SmoothStep}
+        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
       >
-        <Background color="#222" gap={16} variant={BackgroundVariant.Dots} />
-        <Controls position="bottom-right" style={{ background: '#1a1f2c', border: 'none' }} />
+        <Background color="var(--border)" gap={16} variant={BackgroundVariant.Dots} />
+        <Controls position="bottom-right" showInteractive={false} className="!bg-card !border-border" />
         <MiniMap 
           nodeColor={(node) => {
-            if (node.id === 'weth') return '#22c55e';
-            if (node.id === 'builder') return '#f97316';
-            return '#1a1f2c';
+            if (node.id === 'weth') return '#22c55e20';
+            if (node.id === 'builder') return '#f9731620';
+            return 'var(--card)';
           }}
-          maskColor="rgba(0, 0, 0, 0.5)"
-          style={{ background: '#0a0a0a' }}
+          maskColor="rgba(0, 0, 0, 0.2)"
+          className="!bg-background"
         />
       </ReactFlow>
     </div>
