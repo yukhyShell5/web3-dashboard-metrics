@@ -291,6 +291,7 @@ export const useDashboardStore = create<DashboardState>()(
         });
         
         set({ dashboards });
+        console.log('Widget positions updated:', layouts);
       },
       
       updateWidgetFilters: (dashboardId, widgetId, filters) => {

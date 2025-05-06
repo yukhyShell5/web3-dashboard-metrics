@@ -38,6 +38,12 @@ const WidgetsLayout: React.FC<WidgetsLayoutProps> = ({
     });
   };
 
+  // This function will be called whenever the layout changes (resize/move)
+  const handleLayoutChange = (currentLayout: any) => {
+    // Pass the updated layout to the parent component
+    onLayoutChange(currentLayout);
+  };
+
   return (
     <div className="bg-card rounded-lg p-2 h-full w-full">
       <div className="flex justify-between items-center mb-2">
@@ -60,7 +66,7 @@ const WidgetsLayout: React.FC<WidgetsLayoutProps> = ({
             breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
             cols={{ lg: 12, md: 10, sm: 6, xs: 4, xxs: 2 }}
             rowHeight={80}
-            onLayoutChange={onLayoutChange}
+            onLayoutChange={handleLayoutChange}
             isDraggable={true}
             isResizable={true}
             margin={[12, 12]}

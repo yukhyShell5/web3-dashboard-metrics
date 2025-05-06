@@ -12,7 +12,7 @@ import { DashboardLayout } from '@/types/dashboard';
 import { WidgetType as WidgetTypeEnum } from '@/types/widget';
 import { toast } from "@/hooks/use-toast";
 import { DashboardProvider } from '@/contexts/DashboardContext';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import GlobalFilters from './GlobalFilters';
 import DashboardHeader from './dashboardEdit/DashboardHeader';
 import WidgetsLayout from './dashboardEdit/WidgetsLayout';
@@ -33,13 +33,24 @@ const DashboardEdit: React.FC = () => {
   const [title, setTitle] = useState(dashboard?.title || '');
   const [description, setDescription] = useState(dashboard?.description || '');
   const [isWidgetCreatorOpen, setIsWidgetCreatorOpen] = useState(false);
+  const [layoutChanged, setLayoutChanged] = useState(false);
   
   if (!dashboard) {
     return <EmptyDashboard onGoBack={() => navigate('/dashboards')} />;
   }
   
   const handleLayoutChange = (layout: any) => {
+    // Mark that layout has changed to provide visual feedback
+    setLayoutChanged(true);
+    
+    // Update the widget positions in the store
     updateWidgetPositions(dashboard.id, layout);
+    
+    // Optional: Show a toast notification for user feedback
+    toast({
+      title: "Layout updated",
+      description: "Widget positions have been updated"
+    });
   };
   
   const handleSave = () => {
@@ -47,10 +58,12 @@ const DashboardEdit: React.FC = () => {
       title,
       description
     });
+    
     toast({
       title: "Dashboard updated",
       description: "Your changes have been saved successfully"
     });
+    
     navigate(`/dashboards/view/${dashboard.id}`);
   };
   
@@ -148,6 +161,7 @@ const DashboardEdit: React.FC = () => {
         
         <Dialog open={isWidgetCreatorOpen} onOpenChange={setIsWidgetCreatorOpen}>
           <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+            <DialogTitle>Add Widget</DialogTitle>
             <WidgetCreator
               onAddWidget={handleAddWidget}
               onCancel={() => setIsWidgetCreatorOpen(false)}
