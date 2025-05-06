@@ -12,7 +12,7 @@ interface WidgetHeaderProps {
   setShowFilters: (show: boolean) => void;
   handleRefresh: () => void;
   onConfigure?: (id: string) => void;
-  onRemove?: (id: string) => void;
+  onRemove?: () => void;
   widgetId: string;
   dataFields: string[];
 }
@@ -81,7 +81,7 @@ const WidgetHeader: React.FC<WidgetHeaderProps> = ({
                 variant="ghost" 
                 size="icon" 
                 className="h-6 w-6"
-                onClick={() => onRemove(widgetId)}
+                onClick={onRemove}
                 aria-label="Remove widget"
               >
                 <XIcon className="h-3 w-3" />

@@ -42,6 +42,12 @@ const Widget: React.FC<WidgetProps> = ({
     return Object.keys(data[0]);
   }, [data]);
 
+  const handleRemoveWidget = () => {
+    if (onRemove) {
+      onRemove(widget.id);
+    }
+  };
+
   return (
     <Card className="w-full h-full overflow-hidden bg-card/50 border-border/50 shadow-none">
       <CardContent className="p-2 flex flex-col h-full">
@@ -53,7 +59,7 @@ const Widget: React.FC<WidgetProps> = ({
           setShowFilters={setShowFilters}
           handleRefresh={handleRefresh}
           onConfigure={onConfigure}
-          onRemove={onRemove}
+          onRemove={handleRemoveWidget}
           widgetId={widget.id}
           dataFields={dataFields}
         />

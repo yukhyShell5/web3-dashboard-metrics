@@ -54,6 +54,16 @@ const DashboardEdit: React.FC = () => {
     navigate(`/dashboards/view/${dashboard.id}`);
   };
   
+  const handleRemoveWidget = (widgetId: string) => {
+    if (dashboard && widgetId) {
+      removeWidget(dashboard.id, widgetId);
+      toast({
+        title: "Widget removed",
+        description: "Widget has been removed from the dashboard"
+      });
+    }
+  };
+  
   const handleAddWidget = (widgetConfig: {
     title: string;
     type: WidgetTypeEnum;
@@ -131,7 +141,7 @@ const DashboardEdit: React.FC = () => {
           <WidgetsLayout 
             widgets={dashboard.widgets}
             onLayoutChange={handleLayoutChange}
-            onRemoveWidget={(widgetId) => removeWidget(dashboard.id, widgetId)}
+            onRemoveWidget={handleRemoveWidget}
             onAddWidgetClick={() => setIsWidgetCreatorOpen(true)}
           />
         </div>

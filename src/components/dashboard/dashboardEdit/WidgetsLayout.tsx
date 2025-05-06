@@ -5,6 +5,7 @@ import { PlusIcon } from 'lucide-react';
 import { Responsive, WidthProvider } from 'react-grid-layout';
 import Widget from '../widget';
 import { Widget as WidgetType } from '@/types/widget';
+import { toast } from "@/hooks/use-toast";
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
@@ -27,6 +28,14 @@ const WidgetsLayout: React.FC<WidgetsLayoutProps> = ({
       ...widget.position,
       i: widget.id
     }))
+  };
+  
+  const handleRemoveWidget = (widgetId: string) => {
+    onRemoveWidget(widgetId);
+    toast({
+      title: "Widget removed",
+      description: "The widget has been removed from your dashboard"
+    });
   };
 
   return (
@@ -64,7 +73,7 @@ const WidgetsLayout: React.FC<WidgetsLayoutProps> = ({
                 <Widget 
                   widget={widget} 
                   isEditing={true} 
-                  onRemove={onRemoveWidget} 
+                  onRemove={handleRemoveWidget} 
                 />
               </div>
             ))}
