@@ -9,6 +9,7 @@ import GaugeChart from '@/components/charts/GaugeChart';
 import HeatmapChart from '@/components/charts/HeatmapChart';
 import ScatterPlotChart from '@/components/charts/ScatterPlotChart';
 import { Widget as WidgetType } from '@/types/widget';
+import { ChartContainer, ChartTooltip } from '@/components/ui/chart';
 
 interface WidgetContentProps {
   widget: WidgetType;
@@ -23,10 +24,16 @@ const WidgetContent: React.FC<WidgetContentProps> = ({
   isLoading,
   onChartElementClick
 }) => {
+  // Calculate chart height based on widget position
+  const getChartHeight = () => {
+    const baseHeight = widget.position.h * 40; // Reduced multiplier for more compact charts
+    return Math.max(baseHeight, 120); // Minimum height to ensure visibility
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-full">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
       </div>
     );
   }
@@ -37,7 +44,7 @@ const WidgetContent: React.FC<WidgetContentProps> = ({
         <BarChart
           data={data}
           xDataKey={widget.config.xDataKey || "name"}
-          height={widget.position.h * 50}
+          height={getChartHeight()}
           bars={[{ dataKey: widget.config.dataKey || 'value', name: 'Value', fill: widget.config.colorScheme?.[0] || '#3b82f6' }]}
           stacked={widget.config.stacked}
           onElementClick={onChartElementClick}
@@ -48,7 +55,7 @@ const WidgetContent: React.FC<WidgetContentProps> = ({
         <LineChart
           data={data}
           xDataKey={widget.config.xDataKey || "day"}
-          height={widget.position.h * 50}
+          height={getChartHeight()}
           lines={[{ dataKey: widget.config.dataKey || 'value', name: 'Value', stroke: widget.config.colorScheme?.[0] || '#8b5cf6' }]}
           onPointClick={onChartElementClick}
         />
@@ -59,7 +66,7 @@ const WidgetContent: React.FC<WidgetContentProps> = ({
           data={data}
           dataKey={widget.config.dataKey || "value"}
           nameKey={widget.config.xDataKey || "name"}
-          height={widget.position.h * 50}
+          height={getChartHeight()}
           colors={widget.config.colorScheme || ['#3b82f6', '#8b5cf6', '#10b981', '#ef4444']}
           onSectorClick={onChartElementClick}
         />
@@ -71,14 +78,15 @@ const WidgetContent: React.FC<WidgetContentProps> = ({
           min={widget.config.min || 0}
           max={widget.config.max || 100}
           colors={widget.config.colorScheme || ['#10b981', '#f59e0b', '#ef4444']}
-          height={widget.position.h * 50}
+          height={getChartHeight()}
+          thickness={30} // Thinner for more minimalist look
         />
       );
     case 'heatmap':
       return (
         <HeatmapChart
           data={data}
-          height={widget.position.h * 50}
+          height={getChartHeight()}
           colorRange={widget.config.colorScheme || ['#e5f5e0', '#a1d99b', '#31a354']}
           onCellClick={onChartElementClick}
         />
@@ -91,7 +99,7 @@ const WidgetContent: React.FC<WidgetContentProps> = ({
           yDataKey={widget.config.dataKey || "y"}
           zDataKey={widget.config.zDataKey || "z"}
           nameKey={widget.config.nameKey || "name"}
-          height={widget.position.h * 50}
+          height={getChartHeight()}
           fill={widget.config.colorScheme?.[0] || '#8884d8'}
           onPointClick={onChartElementClick}
         />

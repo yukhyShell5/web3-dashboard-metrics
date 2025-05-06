@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Widget as WidgetType, WidgetFilter } from '@/types/widget';
-import { GaugeIcon } from 'lucide-react';
 import WidgetHeader from './WidgetHeader';
 import WidgetContent from './WidgetContent';
 import { useWidgetActions } from './useWidgetActions';
@@ -44,8 +43,8 @@ const Widget: React.FC<WidgetProps> = ({
   }, [data]);
 
   return (
-    <Card className="w-full h-full overflow-hidden">
-      <CardHeader className="p-3 pb-2">
+    <Card className="w-full h-full overflow-hidden bg-card/50 border border-border/50 shadow-sm">
+      <CardContent className="p-3">
         <WidgetHeader
           title={widget.title}
           lastUpdated={lastUpdated}
@@ -58,13 +57,7 @@ const Widget: React.FC<WidgetProps> = ({
           widgetId={widget.id}
           dataFields={dataFields}
         />
-        {lastUpdated && (
-          <div className="text-xs text-muted-foreground mt-1">
-            Updated: {new Date(lastUpdated).toLocaleTimeString()}
-          </div>
-        )}
-      </CardHeader>
-      <CardContent className="p-3 pt-0">
+        
         {showFilters && !isEditing && dataFields.length > 0 && (
           <WidgetFilters 
             filters={widget.config.filters || []} 
@@ -72,18 +65,21 @@ const Widget: React.FC<WidgetProps> = ({
             fields={dataFields}
           />
         )}
-        <WidgetContent
-          widget={widget}
-          data={data}
-          isLoading={isLoading}
-          onChartElementClick={(elementData) => 
-            handleChartElementClick(
-              elementData, 
-              widget.title, 
-              widget.config.xDataKey
-            )
-          }
-        />
+        
+        <div className="mt-2 h-full">
+          <WidgetContent
+            widget={widget}
+            data={data}
+            isLoading={isLoading}
+            onChartElementClick={(elementData) => 
+              handleChartElementClick(
+                elementData, 
+                widget.title, 
+                widget.config.xDataKey
+              )
+            }
+          />
+        </div>
       </CardContent>
     </Card>
   );

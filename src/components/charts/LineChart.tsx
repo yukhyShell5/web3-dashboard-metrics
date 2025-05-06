@@ -41,22 +41,39 @@ const LineChart = ({ data, xDataKey, lines, onLineClick, onPointClick, height = 
       <RechartsLineChart 
         data={processedData} 
         onClick={(e) => e?.activePayload && handleClick(e.activePayload[0]?.payload)}
+        margin={{
+          top: 5,
+          right: 5,
+          left: 0,
+          bottom: 5,
+        }}
       >
-        <CartesianGrid strokeDasharray="3 3" />
+        <CartesianGrid strokeDasharray="3 3" opacity={0.1} vertical={false} />
         <XAxis 
           dataKey={xDataKey} 
           interval="preserveStartEnd"
-          minTickGap={50}
+          minTickGap={30}
+          tick={{ fontSize: 10 }}
+          axisLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+          tickLine={false}
         />
-        <YAxis allowDecimals={false} />
-        <Tooltip />
-        <Legend 
-          onClick={(e: any) => onLineClick?.(e.dataKey)}
-          formatter={(value: any) => (
-            <span className={`cursor-pointer ${lines.find(l => l.active && l.name === value) ? 'font-bold' : ''}`}>
-              {value}
-            </span>
-          )}
+        <YAxis 
+          allowDecimals={false} 
+          tick={{ fontSize: 10 }}
+          axisLine={false}
+          tickLine={false}
+          tickCount={5}
+        />
+        <Tooltip 
+          contentStyle={{ 
+            backgroundColor: 'hsl(var(--popover))', 
+            borderColor: 'hsl(var(--border))',
+            color: 'hsl(var(--foreground))',
+            fontSize: '12px',
+            padding: '8px',
+            borderRadius: '6px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+          }}
         />
         {lines.map((line) => (
           <Line
@@ -65,10 +82,10 @@ const LineChart = ({ data, xDataKey, lines, onLineClick, onPointClick, height = 
             dataKey={line.dataKey}
             stroke={line.stroke}
             name={line.name}
-            strokeWidth={line.active ? 3 : 1}
+            strokeWidth={line.active ? 2 : 1.5}
             opacity={!lines.some(l => l.active) || line.active ? 1 : 0.3}
-            dot={{ r: 5, cursor: 'pointer' }}
-            activeDot={{ r: 8, cursor: 'pointer' }}
+            dot={{ r: 3, strokeWidth: 1 }}
+            activeDot={{ r: 5, cursor: 'pointer' }}
             style={{ cursor: 'pointer' }}
           />
         ))}

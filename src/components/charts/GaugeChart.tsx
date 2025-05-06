@@ -39,7 +39,7 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
   return (
     <div className="flex flex-col items-center">
       <ResponsiveContainer width="100%" height={height}>
-        <PieChart>
+        <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
           <Pie
             data={data}
             cx="50%"
@@ -51,14 +51,15 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
             paddingAngle={0}
             dataKey="value"
             stroke="none"
+            cornerRadius={1}
           >
             <Cell key="value-cell" fill={getColor()} />
-            <Cell key="empty-cell" fill="#e5e7eb" />
+            <Cell key="empty-cell" fill="rgba(255, 255, 255, 0.1)" />
           </Pie>
         </PieChart>
       </ResponsiveContainer>
       <div className="text-3xl font-bold -mt-10">{value}</div>
-      <div className="text-sm text-muted-foreground mt-2">{min} - {max}</div>
+      <div className="text-xs text-muted-foreground mt-2">{min} - {max}</div>
     </div>
   );
 };

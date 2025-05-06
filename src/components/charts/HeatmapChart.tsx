@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   ResponsiveContainer, 
@@ -5,7 +6,7 @@ import {
   Scatter, 
   XAxis, 
   YAxis, 
-  ZAxis, 
+  ZAxis,
   Tooltip, 
   Cell
 } from 'recharts';
@@ -60,17 +61,19 @@ const HeatmapChart: React.FC<HeatmapChartProps> = ({
     <ResponsiveContainer width="100%" height={height}>
       <ScatterChart
         margin={{
-          top: 20,
-          right: 20,
-          bottom: 20,
-          left: 20,
+          top: 10,
+          right: 0,
+          bottom: 10,
+          left: 0,
         }}
       >
         <XAxis 
           type="category" 
           dataKey="hour" 
           name="Hour" 
-          tick={{ fill: '#FFFFFF' }}
+          tick={{ fontSize: 10 }}
+          axisLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+          tickLine={false}
           domain={[0, 23]} 
           ticks={[0, 6, 12, 18, 23]}
           tickFormatter={(hour) => `${hour}h`}
@@ -79,25 +82,30 @@ const HeatmapChart: React.FC<HeatmapChartProps> = ({
           type="category" 
           dataKey="day" 
           name="Day" 
-          width={60}
-          tick={{ fill: '#FFFFFF' }}
+          width={40}
+          tick={{ fontSize: 10 }}
+          axisLine={false}
+          tickLine={false}
           domain={uniqueDays}
         />
         <ZAxis 
           type="number" 
           dataKey="value" 
           name="Value" 
-          range={[50, 50]} 
+          range={[40, 40]} 
         />
         <Tooltip 
-          cursor={{strokeDasharray: '3 3'}}
-          formatter={(value: any) => [`${value}`, 'Value']}
-          labelFormatter={(hour) => `${data.find(d => d.hour === hour)?.day}, ${hour}h`}
           contentStyle={{ 
             backgroundColor: 'hsl(var(--popover))', 
             borderColor: 'hsl(var(--border))',
-            color: 'hsl(var(--foreground))'
+            color: 'hsl(var(--foreground))',
+            fontSize: '12px',
+            padding: '8px',
+            borderRadius: '6px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
           }}
+          formatter={(value: any) => [`${value}`, 'Value']}
+          labelFormatter={(hour) => `${data.find(d => d.hour === hour)?.day}, ${hour}h`}
         />
         <Scatter 
           data={data} 

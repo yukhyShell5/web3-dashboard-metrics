@@ -34,33 +34,37 @@ const BarChart: React.FC<BarChartProps> = ({
       <RechartsBarChart
         data={data}
         margin={{
-          top: 10,
-          right: 10,
+          top: 5,
+          right: 5,
           left: 0,
-          bottom: 0,
+          bottom: 5,
         }}
         onClick={(e) => e?.activePayload && handleClick(e.activePayload[0]?.payload)}
       >
-        <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+        <CartesianGrid strokeDasharray="3 3" opacity={0.1} vertical={false} />
         <XAxis 
           dataKey={xDataKey} 
-          tick={{ fill: '#FFFFFF', fontSize: 12 }}
-          axisLine={{ stroke: 'rgba(255, 255, 255, 0.3)' }}
+          tick={{ fontSize: 10 }}
+          axisLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+          tickLine={false}
         />
         <YAxis 
-          tick={{ fill: '#FFFFFF', fontSize: 12 }}
-          axisLine={{ stroke: 'rgba(255, 255, 255, 0.3)' }}
+          tick={{ fontSize: 10 }}
+          axisLine={false}
+          tickLine={false}
+          tickCount={5}
         />
         <Tooltip 
           contentStyle={{ 
             backgroundColor: 'hsl(var(--popover))', 
             borderColor: 'hsl(var(--border))',
-            color: 'hsl(var(--foreground))'
+            color: 'hsl(var(--foreground))',
+            fontSize: '12px',
+            padding: '8px',
+            borderRadius: '6px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
           }}
-          itemStyle={{ color: 'hsl(var(--foreground))' }}
-          labelStyle={{ color: 'hsl(var(--foreground))' }}
         />
-        <Legend />
         {bars.map((bar, index) => (
           <Bar 
             key={index} 
@@ -70,6 +74,8 @@ const BarChart: React.FC<BarChartProps> = ({
             stackId={stacked ? "stack" : undefined}
             onClick={handleClick}
             cursor="pointer"
+            radius={[4, 4, 0, 0]} // Rounded top corners
+            maxBarSize={50}
           />
         ))}
       </RechartsBarChart>

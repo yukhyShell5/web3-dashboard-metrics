@@ -43,50 +43,57 @@ const ScatterPlotChart: React.FC<ScatterPlotChartProps> = ({
     <ResponsiveContainer width="100%" height={height}>
       <RechartsScatterChart
         margin={{
-          top: 20,
-          right: 20,
-          bottom: 20,
-          left: 20,
+          top: 5,
+          right: 5,
+          bottom: 5,
+          left: 5,
         }}
       >
-        <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+        <CartesianGrid strokeDasharray="3 3" opacity={0.1} vertical={false} />
         <XAxis 
           type="number" 
           dataKey={xDataKey} 
           name={xDataKey} 
-          tick={{ fill: '#FFFFFF' }}
-          axisLine={{ stroke: 'rgba(255, 255, 255, 0.3)' }}
+          tick={{ fontSize: 10 }}
+          axisLine={{ stroke: 'rgba(255, 255, 255, 0.1)' }}
+          tickLine={false}
         />
         <YAxis 
           type="number" 
           dataKey={yDataKey} 
           name={yDataKey} 
-          tick={{ fill: '#FFFFFF' }}
-          axisLine={{ stroke: 'rgba(255, 255, 255, 0.3)' }}
+          tick={{ fontSize: 10 }}
+          axisLine={false}
+          tickLine={false}
+          tickCount={5}
         />
         {zDataKey && (
           <ZAxis 
             type="number" 
             dataKey={zDataKey} 
-            range={[50, 400]} 
+            range={[30, 300]} 
             name={zDataKey} 
           />
         )}
         <Tooltip 
-          cursor={{strokeDasharray: '3 3'}}
-          formatter={(value: any, name: any) => [`${value}`, name]}
-          labelFormatter={(name) => nameKey && data.find(d => d[xDataKey] === name)?.[nameKey] || name}
+          cursor={{strokeDasharray: '3 3', stroke: 'rgba(255,255,255,0.1)'}}
           contentStyle={{ 
             backgroundColor: 'hsl(var(--popover))', 
             borderColor: 'hsl(var(--border))',
-            color: 'hsl(var(--foreground))'
+            color: 'hsl(var(--foreground))',
+            fontSize: '12px',
+            padding: '8px',
+            borderRadius: '6px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
           }}
+          formatter={(value: any, name: any) => [`${value}`, name]}
+          labelFormatter={(name) => nameKey && data.find(d => d[xDataKey] === name)?.[nameKey] || name}
         />
-        <Legend />
         <Scatter 
           name="Data Points" 
           data={data} 
           fill={fill} 
+          fillOpacity={0.8}
           shape="circle"
           onClick={handleClick}
           cursor={onPointClick ? 'pointer' : 'default'}

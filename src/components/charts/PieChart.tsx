@@ -31,19 +31,47 @@ const PieChart = ({
     }
   };
 
+  const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+    // Only show label if the percentage is significant (e.g., > 5%)
+    if (percent < 0.05) return null;
+    
+    const RADIAN = Math.PI / 180;
+    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text 
+        x={x} 
+        y={y} 
+        fill="#fff" 
+        textAnchor={x > cx ? 'start' : 'end'} 
+        dominantBaseline="central"
+        fontSize={10}
+        fontWeight="bold"
+      >
+        {`${(percent * 100).toFixed(0)}%`}
+      </text>
+    );
+  };
+
   return (
     <ResponsiveContainer width="100%" height={height}>
-      <RechartsPieChart>
+      <RechartsPieChart margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
         <Pie
           data={data}
           cx="50%"
           cy="50%"
           labelLine={false}
-          outerRadius={80}
+          label={renderCustomizedLabel}
+          outerRadius="85%"
+          innerRadius="40%"
           fill="#8884d8"
           dataKey={dataKey}
           nameKey={nameKey}
           onClick={handleClick}
+          strokeWidth={1}
+          stroke="rgba(0, 0, 0, 0.05)"
         >
           {data.map((entry, index) => (
             <Cell
@@ -54,18 +82,29 @@ const PieChart = ({
             />
           ))}
         </Pie>
-        <Tooltip />
-        <Legend
+        <Tooltip 
+          contentStyle={{ 
+            backgroundColor: 'hsl(var(--popover))', 
+            borderColor: 'hsl(var(--border))',
+            color: 'hsl(var(--foreground))',
+            fontSize: '12px',
+            padding: '8px',
+            borderRadius: '6px',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+          }}
+        />
+        <Legend 
+          layout="horizontal"
+          verticalAlign="bottom"
+          align="center"
+          iconSize={8}
+          iconType="circle"
+          wrapperStyle={{ fontSize: '10px', paddingTop: '10px' }}
           onClick={(e) => {
             if (onSeverityClick) {
               onSeverityClick(e.value.toLowerCase())
             }
           }}
-          formatter={(value) => (
-            <span className={`cursor-pointer ${value.toLowerCase() === activeSeverity ? 'font-bold' : ''}`}>
-              {value}
-            </span>
-          )}
         />
       </RechartsPieChart>
     </ResponsiveContainer>
