@@ -42,6 +42,7 @@ const Widget: React.FC<WidgetProps> = ({
     return Object.keys(data[0]);
   }, [data]);
 
+  // Ensure we're correctly passing the widget ID to the onRemove handler
   const handleRemoveWidget = () => {
     if (onRemove) {
       onRemove(widget.id);
@@ -58,7 +59,7 @@ const Widget: React.FC<WidgetProps> = ({
           showFilters={showFilters}
           setShowFilters={setShowFilters}
           handleRefresh={handleRefresh}
-          onConfigure={onConfigure}
+          onConfigure={onConfigure ? () => onConfigure(widget.id) : undefined}
           onRemove={handleRemoveWidget}
           widgetId={widget.id}
           dataFields={dataFields}

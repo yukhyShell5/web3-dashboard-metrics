@@ -30,6 +30,7 @@ const WidgetsLayout: React.FC<WidgetsLayoutProps> = ({
     }))
   };
   
+  // Make sure to correctly pass the widgetId to the parent component
   const handleRemoveWidget = (widgetId: string) => {
     onRemoveWidget(widgetId);
     toast({

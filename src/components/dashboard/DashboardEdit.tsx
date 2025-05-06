@@ -70,6 +70,8 @@ const DashboardEdit: React.FC = () => {
   const handleRemoveWidget = (widgetId: string) => {
     if (dashboard && widgetId) {
       removeWidget(dashboard.id, widgetId);
+      
+      // Show a toast notification for user feedback
       toast({
         title: "Widget removed",
         description: "Widget has been removed from the dashboard"
