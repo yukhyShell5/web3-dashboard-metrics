@@ -71,7 +71,6 @@ export interface CompensateResponse {
 }
 
 export const insuranceVaultApi = {
-  // ... (you might have other vault functions like deposit, addYield, getTotalAssets here)
 
   compensate: async (data: CompensateRequest): Promise<CompensateResponse> => {
     try {
