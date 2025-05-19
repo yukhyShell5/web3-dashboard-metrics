@@ -1,9 +1,10 @@
+// --- START OF FILE AlertTable.tsx ---
 
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Eye } from 'lucide-react';
-import { AlertSeverity, AlertItemProps } from './RecentAlerts';
+import { Eye, ShieldCheck } from 'lucide-react'; // Added ShieldCheck for compensation
+import { AlertSeverity, AlertItemProps } from './RecentAlerts'; // Make sure RecentAlerts exports these
 
 interface AlertTableProps {
   alerts: AlertItemProps[];
@@ -11,6 +12,7 @@ interface AlertTableProps {
   sortDirection: 'asc' | 'desc';
   onSort: (field: string) => void;
   onViewAlert: (alert: AlertItemProps) => void;
+  onCompensate: (alert: AlertItemProps) => void; // New prop
 }
 
 const AlertTable: React.FC<AlertTableProps> = ({
@@ -19,6 +21,7 @@ const AlertTable: React.FC<AlertTableProps> = ({
   sortDirection,
   onSort,
   onViewAlert,
+  onCompensate, // New prop
 }) => {
   const getSortIcon = (field: string) => {
     if (sortField !== field) return null;
@@ -69,7 +72,7 @@ const AlertTable: React.FC<AlertTableProps> = ({
               {getSortIcon('timestamp')}
             </div>
           </TableHead>
-          <TableHead></TableHead>
+          <TableHead>Actions</TableHead> {/* Changed to Actions */}
         </TableRow>
       </TableHeader>
       <TableBody>
@@ -89,12 +92,20 @@ const AlertTable: React.FC<AlertTableProps> = ({
               <TableCell className="text-muted-foreground text-sm">
                 {new Date(alert.timestamp).toLocaleString()}
               </TableCell>
-              <TableCell>
-                <button 
+              <TableCell className="space-x-2"> {/* Added space-x-2 for button spacing */}
+                <button
                   className="p-2 rounded border border-muted-foreground/20 hover:border-primary/80 text-muted-foreground hover:text-primary transition-all duration-200 hover:shadow-sm hover:bg-primary/5 group"
                   onClick={() => onViewAlert(alert)}
+                  title="View Alert Details"
                 >
                   <Eye className="h-4 w-4 group-hover:scale-110 transition-transform" />
+                </button>
+                <button
+                  className="p-2 rounded border border-green-500/30 hover:border-green-500/80 text-green-600 hover:text-green-500 transition-all duration-200 hover:shadow-sm hover:bg-green-500/5 group"
+                  onClick={() => onCompensate(alert)}
+                  title="Trigger Compensation"
+                >
+                  <ShieldCheck className="h-4 w-4 group-hover:scale-110 transition-transform" />
                 </button>
               </TableCell>
             </TableRow>

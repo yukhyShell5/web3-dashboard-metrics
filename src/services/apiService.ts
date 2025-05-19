@@ -59,6 +59,67 @@ export interface Rule {
   created?: string;
 }
 
+export interface CompensateRequest {
+  recipient_address: string;
+  amount_stablecoin_smallest_unit: number;
+  alert_id_reference: number;
+}
+
+export interface CompensateResponse {
+  message: string;
+  compensation_tx_hash: string;
+}
+
+export const insuranceVaultApi = {
+  // ... (you might have other vault functions like deposit, addYield, getTotalAssets here)
+
+  compensate: async (data: CompensateRequest): Promise<CompensateResponse> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/insurance-vault/compensate`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        await handleApiError(response); // This will throw if not ok
+      }
+      
+      return await response.json();
+    } catch (error) {
+      console.error("Erreur lors de la demande de compensation:", error);
+      // The handleApiError already shows a toast, but you might want to re-throw
+      // or return a specific error structure if the caller needs to handle it differently.
+      throw error; 
+    }
+  },
+
+  getTotalAssets: async (): Promise<{
+    total_assets_smallest_unit: number;
+    stablecoin_decimals: number;
+    total_assets_formatted: number;
+  }> => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/insurance-vault/total-assets`);
+      if (!response.ok) {
+        await handleApiError(response);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching total vault assets:", error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch vault assets",
+        variant: "destructive",
+      });
+      // Return a default or throw
+      return { total_assets_smallest_unit: 0, stablecoin_decimals: 6, total_assets_formatted: 0 };
+    }
+  }
+};
+
 export interface NotificationSettings {
   critical: boolean;
   high: boolean;

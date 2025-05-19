@@ -42,7 +42,7 @@ export const useAlertsData = ({ activeSeverity, selectedAlertId, activeType }: U
     description: alert.reason,
     severity: mapSeverity(alert.severity),
     timestamp: alert.date,
-    source: alert.source || 'Unknown'
+    source: alert.address  || 'Unknown'
   }));
 
   function mapSeverity(severity: string): AlertSeverity {
